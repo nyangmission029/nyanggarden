@@ -333,7 +333,7 @@ footer.site-footer {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
- 
+
 @media (max-width: 560px) {
   .wrap { padding: 0 18px; }
   .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
@@ -347,7 +347,8 @@ footer.site-footer {
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
-  padding: 12px 0;
+  padding: 18px 0 18px;
+  text-transform: none; /* tránh bị footer ép viết hoa -> đổi hẳn sang bộ icon khác */
 }
  
 /* ---------- Add-card tile + modal (edit mode only) ---------- */
