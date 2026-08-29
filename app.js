@@ -83,7 +83,7 @@ function heroBanner() {
 
 /* ---------- Divider (Yarndings 20 symbol row, replaces plain border lines) ---------- */
 
-const DIVIDER_TEXT = "fahbzfhdcefjhmyffahbzfhdcefjhmyffahbzfhdcefjhmyfahbzfbahjfahbzf";
+const DIVIDER_TEXT = "fahbzfhdcefjhmyfahbzfhdcefjhmyfahbzfhdcefjhmyfahbzfbahjfahbzf";
 function divider() {
   return el("div", { class: "divider", "aria-hidden": "true" }, DIVIDER_TEXT);
 }
