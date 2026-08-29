@@ -1,0 +1,108 @@
+{
+  "siteName": "NYANG GARDEN",
+  "siteSubtitle": "The Nyang Mission for World's Cutest Nyangie",
+  "hero": {
+    "image": "images/covers/hero-cover.jpg",
+    "title": "NYANG GARDEN",
+    "subtitle": "The Nyang Mission for World's Cutest Nyangie"
+  },
+  "categories": [
+    {
+      "id": "offstage",
+      "name": "OFFSTAGE/AIRPORT",
+      "cover": "images/covers/offstage-cover.jpg",
+      "years": [
+        {
+          "id": "2020-2021",
+          "name": "2020-2021",
+          "cover": "images/covers/airport-2020-21-cover.jpg",
+          "dates": [
+            {
+              "id": "2021-03-15",
+              "name": "15.03.2021",
+              "label": "Incheon Airport",
+              "cover": "images/covers/airport-2021-03-15-cover.jpg",
+              "link": "https://mega.nz/YOUR_LINK_HERE"
+            }
+          ]
+        },
+        {
+          "id": "2022",
+          "name": "2022",
+          "cover": "images/covers/airport-2022-cover.jpg",
+          "dates": [
+            {
+              "id": "2022-03-15",
+              "name": "15.03.2022",
+              "label": "Incheon Airport",
+              "cover": "images/covers/airport-2022-03-15-cover.jpg",
+              "link": "https://mega.nz/YOUR_LINK_HERE"
+            }
+          ]
+        },
+        {
+          "id": "2023",
+          "name": "2023",
+          "cover": "images/covers/airport-2023-cover.jpg",
+          "dates": [
+            {
+              "id": "2023-03-15",
+              "name": "15.03.2023",
+              "label": "Incheon Airport",
+              "cover": "images/covers/airport-2023-03-15-cover.jpg",
+              "link": "https://mega.nz/YOUR_LINK_HERE"
+            }
+          ]
+        },
+        {
+          "id": "2024",
+          "name": "2024",
+          "cover": "images/covers/airport-2024-cover.jpg",
+          "dates": [
+            {
+              "id": "2024-08-21",
+              "name": "21.08.2024",
+              "label": "Gimpo Airport",
+              "cover": "images/covers/airport-2024-08-21-cover.jpg",
+              "link": "https://mega.nz/YOUR_LINK_HERE"
+            },
+            {
+              "id": "2024-11-02",
+              "name": "02.11.2024",
+              "label": "Incheon Airport",
+              "cover": "images/covers/airport-2024-11-02-cover.jpg",
+              "link": "https://mega.nz/YOUR_LINK_HERE"
+            }
+          ]
+        },
+        {
+          "id": "2025",
+          "name": "2025",
+          "cover": "images/covers/airport-2025-cover.jpg",
+          "dates": []
+        }
+      ]
+    },
+    {
+      "id": "event",
+      "name": "EVENT",
+      "cover": "images/covers/event-cover.jpg",
+      "years": [
+        {
+          "id": "2024",
+          "name": "2024",
+          "cover": "images/covers/award-2024-cover.jpg",
+          "dates": [
+            {
+              "id": "2024-01-10",
+              "name": "10.01.2024",
+              "label": "Golden Disc Awards",
+              "cover": "images/covers/award-2024-01-10-cover.jpg",
+              "link": "https://mega.nz/YOUR_LINK_HERE"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

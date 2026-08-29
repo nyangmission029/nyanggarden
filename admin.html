@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload ảnh — Nyang Garden</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="admin.css" />
+</head>
+<body>
+  <div class="wrap admin-wrap">
+    <header class="admin-header">
+      <h1>Upload ảnh</h1>
+      <p class="admin-sub">Chọn ảnh từ máy → nhận link để dán vào <code>data.json</code></p>
+    </header>
+
+    <section class="card-creator">
+      <h2 class="card-creator-title">Tạo card ngày mới</h2>
+      <p class="admin-sub">Điền thông tin + chọn ảnh bìa → nhận sẵn đoạn JSON để dán vào đúng chỗ trong <code>data.json</code></p>
+
+      <div class="cc-row">
+        <label class="cc-field">
+          <span>Danh mục</span>
+          <select id="ccCategory"><option value="">— Chọn danh mục —</option></select>
+        </label>
+        <label class="cc-field">
+          <span>Năm</span>
+          <select id="ccYear" disabled><option value="">— Chọn danh mục trước —</option></select>
+        </label>
+      </div>
+
+      <div class="cc-row">
+        <label class="cc-field">
+          <span>Tên hiển thị (VD: 21.08.2024)</span>
+          <input type="text" id="ccName" placeholder="21.08.2024" />
+        </label>
+        <label class="cc-field">
+          <span>Mô tả ngắn (địa điểm, sự kiện...) — không bắt buộc</span>
+          <input type="text" id="ccLabel" placeholder="Incheon Airport" />
+        </label>
+      </div>
+
+      <label class="cc-field">
+        <span>Link kho ảnh gốc (Mega...) — không bắt buộc</span>
+        <input type="text" id="ccLink" placeholder="https://mega.nz/folder/..." />
+      </label>
+
+      <div class="cc-field">
+        <span>Ảnh bìa cho card này</span>
+        <div class="upload-box" id="ccDropZone">
+          <input type="file" id="ccFileInput" accept="image/*" hidden />
+          <div class="upload-box-inner" id="ccDropInner">
+            <p class="upload-hint">Kéo thả 1 ảnh vào đây, hoặc</p>
+            <button type="button" id="ccPickBtn" class="pick-btn">Chọn ảnh từ máy</button>
+          </div>
+          <img id="ccPreview" class="cc-preview" hidden />
+        </div>
+        <p id="ccUploadStatus" class="cc-upload-status"></p>
+      </div>
+
+      <button type="button" id="ccGenerateBtn" class="pick-btn cc-generate-btn">Tạo card</button>
+
+      <div id="ccOutput" class="cc-output" hidden>
+        <p class="cc-output-hint" id="ccOutputHint"></p>
+        <div class="result-url-row">
+          <textarea id="ccOutputJson" class="cc-output-json" readonly rows="8"></textarea>
+          <button type="button" id="ccCopyBtn" class="copy-btn">Copy</button>
+        </div>
+      </div>
+    </section>
+
+    <hr class="cc-divider" />
+
+    <div class="admin-header">
+      <h2 class="card-creator-title">Upload ảnh lẻ (dùng cho cover danh mục/năm)</h2>
+    </div>
+
+    <div class="upload-box" id="dropZone">
+      <input type="file" id="fileInput" accept="image/*" multiple hidden />
+      <div class="upload-box-inner">
+        <p class="upload-hint">Kéo thả ảnh vào đây, hoặc</p>
+        <button type="button" id="pickBtn" class="pick-btn">Chọn ảnh từ máy</button>
+      </div>
+    </div>
+
+    <p id="configWarning" class="config-warning" hidden>
+      ⚠️ Bạn chưa điền <code>CLOUD_NAME</code> / <code>UPLOAD_PRESET</code> trong file
+      <code>admin.js</code>. Xem hướng dẫn trong <code>README-admin.md</code> để hoàn tất thiết lập trước khi upload.
+    </p>
+
+    <div id="results" class="results"></div>
+  </div>
+
+  <script src="admin.js"></script>
+</body>
+</html>

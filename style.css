@@ -1,0 +1,332 @@
+/* =========================================================
+   NYANG GARDEN — exhibition-style photo showroom for Yang Jungwon of ENHYPEN
+   Design tokens live here. Change these to reskin the site.
+   ========================================================= */
+ 
+:root {
+  --bg: #102D23; /* màu nền chính của cả trang */
+  --bg-elevated: #183B2D; /* màu nền của thẻ card (nhạt hơn nền chính 1 chút) */
+  --line: #31533F; /* màu viền, đường kẻ phân cách */
+  --text: #E8F0E2; /* màu chữ chính */
+  --text-muted: #9CAF96; /* màu chữ phụ (ngày tháng, ghi chú nhỏ) */
+  --accent: #718C50; /* màu nhấn — dùng cho nhãn, viền hover, chữ nổi bật */
+  --accent-bright: #A4BD72; /* màu nhấn sáng hơn — dùng khi hover/focus */
+  --font-display: "Fraunces", "Playfair Display", Georgia, serif;
+  --font-body: "Work Sans", "Inter", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", "Courier New", monospace;
+  --radius: 2px;
+  --gap: 28px;
+  --max-width: 1240px;
+}
+ 
+* { box-sizing: border-box; }
+ 
+html { scroll-behavior: smooth; }
+ 
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+ 
+a { color: inherit; text-decoration: none; }
+ 
+img { display: block; max-width: 100%; }
+ 
+::selection { background: var(--accent); color: #101014; }
+ 
+:focus-visible {
+  outline: 2px solid var(--accent-bright);
+  outline-offset: 3px;
+}
+ 
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+ 
+/* ---------- Hero banner (home page only) ---------- */
+ 
+.hero {
+  position: relative;
+  height: 78vh;
+  min-height: 460px;
+  max-height: 780px;
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg-elevated); /* màu nền dự phòng trong lúc ảnh hero đang tải */
+  display: flex;
+  flex-direction: column;
+}
+ 
+.hero-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+}
+ 
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(5, 8, 10, 0.35) 0%,
+    rgba(5, 8, 10, 0.15) 30%,
+    rgba(5, 8, 10, 0.55) 68%,
+    rgba(5, 8, 10, 0.85) 100%
+  );
+}
+ 
+.hero-topbar {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 28px 36px;
+}
+ 
+.hero-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  color: #f2efe9;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+ 
+.hero-icon-btn svg { width: 22px; height: 22px; }
+ 
+.hero-body {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 24px 56px;
+}
+ 
+.hero-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(38px, 7vw, 84px);
+  letter-spacing: 0.06em;
+  color: #f2efe9;
+  margin: 0;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35);
+}
+ 
+.hero-subtitle {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(14px, 1.6vw, 19px);
+  color: rgba(242, 239, 233, 0.85);
+  margin: 18px 0 0;
+}
+ 
+ 
+/* ---------- Layout shell ---------- */
+ 
+.wrap {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 32px;
+}
+ 
+header.site-header {
+  padding: 48px 0 28px;
+  border-bottom: 1px solid var(--line);
+}
+ 
+.site-title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(28px, 4vw, 42px);
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+ 
+.site-subtitle {
+  margin: 8px 0 0;
+  color: var(--text-muted);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-family: var(--font-mono);
+}
+ 
+/* ---------- Breadcrumb / floor signage ---------- */
+ 
+.floor-guide {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 22px 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+ 
+.floor-guide a { color: var(--text-muted); border-bottom: 1px solid transparent; }
+.floor-guide a:hover { color: var(--accent-bright); border-color: var(--accent-bright); }
+.floor-guide .sep { color: var(--line); }
+.floor-guide .current { color: var(--accent); }
+ 
+/* ---------- Section heading ---------- */
+ 
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 8px 0 30px;
+  gap: 16px;
+}
+ 
+.section-head h2 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: clamp(24px, 3vw, 34px);
+  margin: 0;
+  letter-spacing: 0.02em;
+}
+ 
+.section-count {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+ 
+/* ---------- Card grid ---------- */
+ 
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--gap);
+  padding-bottom: 64px;
+}
+ 
+.card {
+  position: relative;
+  display: block;
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: transform 0.25s ease, border-color 0.25s ease;
+}
+ 
+.card:hover,
+.card:focus-visible {
+  transform: translateY(-4px);
+  border-color: var(--accent);
+}
+ 
+.card-frame {
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  overflow: hidden;
+  background:
+    linear-gradient(135deg, #1c261c 25%, transparent 25%) -14px 0/28px 28px,
+    linear-gradient(225deg, #1c261c 25%, transparent 25%) -14px 0/28px 28px,
+    linear-gradient(315deg, #1c261c 25%, transparent 25%) 0 0/28px 28px,
+    linear-gradient(45deg, #1c261c 25%, #131c13 25%) 0 0/28px 28px;
+}
+ 
+.card-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+ 
+.card:hover .card-frame img { transform: scale(1.05); }
+ 
+.card-plate {
+  padding: 14px 16px 16px;
+  border-top: 1px solid var(--line);
+}
+ 
+.card-plate .plate-eyebrow {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 4px;
+}
+ 
+.card-plate .plate-title {
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 500;
+  margin: 0;
+}
+ 
+.card-plate .plate-sub {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  color: var(--text-muted);
+}
+ 
+.card.is-external::after {
+  content: "↗";
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(16, 16, 20, 0.75);
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  font-size: 14px;
+  color: var(--accent-bright);
+}
+ 
+/* ---------- Empty state ---------- */
+ 
+.empty-state {
+  padding: 60px 0;
+  text-align: center;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+}
+ 
+/* ---------- Footer ---------- */
+ 
+footer.site-footer {
+  border-top: 1px solid var(--line);
+  padding: 28px 0 48px;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+ 
+@media (max-width: 560px) {
+  .wrap { padding: 0 18px; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 16px; }
+}
