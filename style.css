@@ -263,18 +263,11 @@ header.site-header {
 .card-year .card-frame { aspect-ratio: 1 / 1; }
 .card-date .card-frame { aspect-ratio: 2 / 3; }
 
-/* Category cards are the largest — give them more room in the grid */
+/* Per-level grid widths: category = 680px, year = 340px, date = 220px */
 .grid:has(.card-category) { grid-template-columns: repeat(auto-fill, minmax(680px, 1fr)); }
-.card-plate {
-  padding: 14px 16px 16px;
-  border-top: 1px solid var(--line);
-}
- .grid:has(.card-year { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
-.card-plate {
-  padding: 14px 16px 16px;
-  border-top: 1px solid var(--line);
-}
-.grid:has(.card-category) { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.grid:has(.card-year) { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+.grid:has(.card-date) { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+
 .card-plate {
   padding: 14px 16px 16px;
   border-top: 1px solid var(--line);
