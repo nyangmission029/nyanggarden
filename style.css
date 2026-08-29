@@ -14,6 +14,7 @@
   --font-display: "Kablammo", "Fraunces", Georgia, serif;
   --font-body: "Bonbon", "Inter", system-ui, sans-serif;
   --font-mono: "Cormorant SC", "Courier New", monospace;
+   --font-subtitle: "Bonbon", "Playfair Display", Georgia, serif;
   --radius: 2px;
   --gap: 28px;
   --max-width: 1240px;
@@ -128,7 +129,7 @@ img { display: block; max-width: 100%; }
 }
  
 .hero-subtitle {
-  font-family: var(--font-display);
+  font-family: var(--font-subtitle);
   font-style: italic;
   font-weight: 400;
   font-size: clamp(14px, 1.6vw, 19px);
