@@ -11,8 +11,8 @@
   --text-muted: #9CAF96; /* màu chữ phụ (ngày tháng, ghi chú nhỏ) */
   --accent: #718C50; /* màu nhấn — dùng cho nhãn, viền hover, chữ nổi bật */
   --accent-bright: #A4BD72; /* màu nhấn sáng hơn — dùng khi hover/focus */
-  --font-display: "Fraunces", "Playfair Display", Georgia, serif;
-  --font-body: "Work Sans", "Inter", system-ui, sans-serif;
+  --font-display: "Fraunces", "Bonbon", Georgia, serif;
+  --font-body: "Cormorant SC", "Inter", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", "Courier New", monospace;
   --radius: 2px;
   --gap: 28px;
