@@ -96,7 +96,7 @@ function heroBanner() {
 
 /* ---------- Divider (Yarndings 20 symbol row, replaces plain border lines) ---------- */
 
-const DIVIDER_TEXT = "fahbzfhdcefjhmyfahbzfhdcefjhmyfahbzfhdcefjhmyfahbzfbahjfahbzf";
+const DIVIDER_TEXT = "fahbzfhdcefjhmyffahbzfhdcefjhmyffahbzfhdcefjhmyfahbzfbahjfahbzf";
 function divider() {
   return el("div", { class: "divider", "aria-hidden": "true" }, DIVIDER_TEXT);
 }
@@ -144,7 +144,7 @@ function openSearchModal() {
   let searchIndex = null;
   let indexError = null;
 
-  const input = el("input", { type: "text", class: "search-input", placeholder: "Search by date, location, year,... exp: 240212, ICN" });
+  const input = el("input", { type: "text", class: "search-input", placeholder: "Search by date, location, year,... exp: 240212, ICN, MAMA" });
   const resultsWrap = el("div", { class: "search-results" });
 
   function showMessage(text) {
@@ -152,14 +152,14 @@ function openSearchModal() {
   }
 
   function runSearch() {
-    if (indexError) { showMessage(`Error: ${indexError.message}`); return; }
-    if (!searchIndex) { showMessage("Loading..."); return; }
+    if (indexError) { showMessage(`Couldn't load search data: ${indexError.message}`); return; }
+    if (!searchIndex) { showMessage("Loading search data…"); return; }
 
     const q = normalizeText(input.value.trim());
     if (!q) { showMessage("Type to search by date, location, year, or category..."); return; }
 
     const matches = searchIndex.filter((item) => item.haystack.includes(q));
-    if (!matches.length) { showMessage("No matching results found"); return; }
+    if (!matches.length) { showMessage("No matching results found."); return; }
 
     const grid = el("div", { class: "grid search-result-grid" });
     matches.slice(0, 30).forEach((item) => {
@@ -179,7 +179,7 @@ function openSearchModal() {
     resultsWrap.replaceChildren(grid);
   }
 
-  showMessage("Loading...");
+  showMessage("Loading search data…");
 
   const closeBtn = el("button", { type: "button", class: "modal-close", "aria-label": "Close" }, "×");
   const modalBox = el("div", { class: "modal-box search-modal-box" }, [
@@ -245,7 +245,7 @@ function makeCardId(name) {
 function addCardTile(cat, yr) {
   return el("button", { class: "card add-card", type: "button" }, [
     el("span", { class: "add-card-plus" }, "+"),
-    el("span", { class: "add-card-label" }, "Thêm ngày mới"),
+    el("span", { class: "add-card-label" }, "New Date"),
   ]).also((btn) => btn.addEventListener("click", () => openAddCardModal(cat, yr)));
 }
 
@@ -412,7 +412,7 @@ function renderCategory(catId) {
   app.replaceChildren(
     header(),
     el("main", { class: "wrap" }, [
-      breadcrumb([{ label: "Home", href: "#/" }, { label: cat.name }]),
+      breadcrumb([{ label: "Exhibition", href: "#/" }, { label: cat.name }]),
       el("div", { class: "section-head" }, [
         el("h2", {}, cat.name),
         el("span", { class: "section-count" }, `${cat.years.length} total`),
@@ -435,7 +435,7 @@ async function renderYear(catId, yearId) {
     header(),
     el("main", { class: "wrap" }, [
       breadcrumb([
-        { label: "Home", href: "#/" },
+        { label: "Exhibition", href: "#/" },
         { label: cat.name, href: `#/${cat.id}` },
         { label: yr.name },
       ]),
@@ -477,7 +477,7 @@ async function renderYear(catId, yearId) {
     header(),
     el("main", { class: "wrap" }, [
       breadcrumb([
-        { label: "Home", href: "#/" },
+        { label: "Exhibition", href: "#/" },
         { label: cat.name, href: `#/${cat.id}` },
         { label: yr.name },
       ]),
@@ -495,7 +495,7 @@ function renderNotFound() {
   app.replaceChildren(
     header(),
     el("main", { class: "wrap" }, [
-      breadcrumb([{ label: "Home", href: "#/" }, { label: "Not found" }]),
+      breadcrumb([{ label: "Exhibition", href: "#/" }, { label: "Not found" }]),
       emptyState("That page doesn't exist."),
     ]),
     footer()
@@ -511,12 +511,6 @@ function route() {
 }
 
 window.addEventListener("hashchange", route);
-
-loadData()
-  .then(route)
-  .catch((err) => {
-    app.replaceChildren(el("div", { class: "wrap" }, `Lỗi tải dữ liệu: ${err.message}`));
-  });
 
 loadData()
   .then(route)
