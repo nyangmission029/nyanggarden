@@ -257,7 +257,13 @@ header.site-header {
 }
  
 .card:hover .card-frame img { transform: scale(1.05); }
- 
+ /* Per-level aspect ratios: category = video-standard 16:9, year = 1:1, date = 2:3 */
+.card-category .card-frame { aspect-ratio: 16 / 9; }
+.card-year .card-frame { aspect-ratio: 1 / 1; }
+.card-date .card-frame { aspect-ratio: 2 / 3; }
+
+/* Category cards are the largest — give them more room in the grid */
+.grid:has(.card-category) { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
 .card-plate {
   padding: 14px 16px 16px;
   border-top: 1px solid var(--line);
