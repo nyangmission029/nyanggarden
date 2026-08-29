@@ -1,5 +1,5 @@
 /* =========================================================
-   IDOL ARCHIVE — router + renderer
+   NYANG GARDEN — router + renderer
    Reads data.json. No build step needed.
    Routes:  #/                      -> categories (home)
             #/{categoryId}          -> years in that category
@@ -79,6 +79,13 @@ function heroBanner() {
       hero.subtitle ? el("p", { class: "hero-subtitle" }, hero.subtitle) : null,
     ]),
   ]);
+}
+
+/* ---------- Divider (Yarndings 20 symbol row, replaces plain border lines) ---------- */
+
+const DIVIDER_TEXT = "abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
+function divider() {
+  return el("div", { class: "divider", "aria-hidden": "true" }, DIVIDER_TEXT);
 }
 
 /* ---------- Edit mode + inline "add date card" ---------- */
@@ -220,11 +227,13 @@ function header() {
       el("h1", { class: "site-title" }, [el("a", { href: "#/" }, DATA.siteName)]),
       el("p", { class: "site-subtitle" }, DATA.siteSubtitle || ""),
     ]),
+    divider(),
   ]);
 }
 
 function footer() {
   return el("footer", { class: "site-footer" }, [
+    divider(),
     el("div", { class: "wrap" }, `© ${new Date().getFullYear()} — ${DATA.siteName}`),
   ]);
 }
@@ -249,6 +258,7 @@ function renderHome() {
   });
   app.replaceChildren(
     heroBanner(),
+    divider(),
     el("main", { class: "wrap", id: "collections" }, [
       el("div", { class: "section-head" }, [
         el("h2", {}, "Collections"),
