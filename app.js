@@ -64,6 +64,8 @@ const ICON_SEARCH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" 
 
 function heroBanner() {
   const hero = DATA.hero || {};
+  const searchBtn = el("button", { class: "hero-icon-btn", "aria-label": "Tìm kiếm", html: ICON_SEARCH });
+  searchBtn.addEventListener("click", openSearchModal);
   return el("div", { class: "hero" }, [
     hero.image ? (() => {
       const img = el("img", { class: "hero-img", src: hero.image, alt: hero.title || DATA.siteName, loading: "eager" });
@@ -72,7 +74,7 @@ function heroBanner() {
     })() : null,
     el("div", { class: "hero-topbar" }, [
       el("button", { class: "hero-icon-btn", "aria-label": "Menu", html: ICON_MENU }),
-      el("button", { class: "hero-icon-btn", "aria-label": "Search", html: ICON_SEARCH }),
+      searchBtn,
     ]),
     el("div", { class: "hero-body" }, [
       el("h1", { class: "hero-title" }, hero.title || DATA.siteName),
@@ -83,9 +85,99 @@ function heroBanner() {
 
 /* ---------- Divider (Yarndings 20 symbol row, replaces plain border lines) ---------- */
 
-const DIVIDER_TEXT = "fahbzfhdcefjhmyfahbzfhdcefjhmyfahbzfhdcefjhmyfahbzfbahjfahbzf";
+const DIVIDER_TEXT = "fahbzfhdcefjhmyffahbzfhdcefjhmyffahbzfhdcefjhmyfahbzfbahjfahbzf";
 function divider() {
   return el("div", { class: "divider", "aria-hidden": "true" }, DIVIDER_TEXT);
+}
+
+/* ---------- Search (home page hero search icon) ---------- */
+
+function normalizeText(str) {
+  return (str || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/đ/g, "d");
+}
+
+function buildSearchIndex() {
+  const index = [];
+  DATA.categories.forEach((cat) => {
+    cat.years.forEach((yr) => {
+      yr.dates.forEach((d) => {
+        const haystack = normalizeText(`${cat.name} ${yr.name} ${d.name} ${d.label || ""}`);
+        index.push({ cat, yr, d, haystack });
+      });
+    });
+  });
+  return index;
+}
+
+function openSearchModal() {
+  const searchIndex = buildSearchIndex();
+
+  const input = el("input", { type: "text", class: "search-input", placeholder: "Tìm theo ngày, địa điểm, năm..." });
+  const emptyMsg = () => el("p", { class: "search-empty" }, "Gõ để tìm theo ngày, địa điểm, năm hoặc danh mục...");
+  const resultsWrap = el("div", { class: "search-results" }, [emptyMsg()]);
+
+  const closeBtn = el("button", { type: "button", class: "modal-close", "aria-label": "Đóng" }, "×");
+  const modalBox = el("div", { class: "modal-box search-modal-box" }, [
+    closeBtn,
+    el("h3", { class: "modal-title" }, "Tìm kiếm"),
+    input,
+    resultsWrap,
+  ]);
+
+  const backdrop = el("div", { class: "modal-backdrop" }, [modalBox]);
+
+  function close() {
+    document.body.removeChild(backdrop);
+    document.removeEventListener("keydown", onKeyDown);
+  }
+  function onKeyDown(e) {
+    if (e.key === "Escape") close();
+  }
+
+  backdrop.addEventListener("click", (e) => { if (e.target === backdrop) close(); });
+  closeBtn.addEventListener("click", close);
+  document.addEventListener("keydown", onKeyDown);
+
+  input.addEventListener("input", () => {
+    const q = normalizeText(input.value.trim());
+    resultsWrap.replaceChildren();
+
+    if (!q) {
+      resultsWrap.appendChild(emptyMsg());
+      return;
+    }
+
+    const matches = searchIndex.filter((item) => item.haystack.includes(q));
+
+    if (!matches.length) {
+      resultsWrap.appendChild(el("p", { class: "search-empty" }, "Không tìm thấy kết quả nào."));
+      return;
+    }
+
+    const grid = el("div", { class: "grid search-result-grid" });
+    matches.slice(0, 30).forEach((item) => {
+      grid.appendChild(
+        card({
+          href: item.d.link,
+          target: "_blank",
+          external: true,
+          cover: item.d.cover,
+          eyebrow: `${item.cat.name} / ${item.yr.name}`,
+          title: item.d.label || item.d.name,
+          sub: item.d.label ? item.d.name : null,
+          extraClass: "card-date",
+        })
+      );
+    });
+    resultsWrap.appendChild(grid);
+  });
+
+  document.body.appendChild(backdrop);
+  input.focus();
 }
 
 /* ---------- Edit mode + inline "add date card" ---------- */
