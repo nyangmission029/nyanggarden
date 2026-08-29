@@ -165,7 +165,7 @@ header.site-header {
   font-size: 14px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  font-family: var(--font-mono);
+  font-family: var(--font-subtitle);
 }
  
 /* ---------- Breadcrumb / floor signage ---------- */
@@ -199,7 +199,7 @@ header.site-header {
 }
  
 .section-head h2 {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-weight: 500;
   font-size: clamp(24px, 3vw, 34px);
   margin: 0;
@@ -218,7 +218,7 @@ header.site-header {
  
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(680px, 1fr));
   gap: var(--gap);
   padding-bottom: 64px;
 }
@@ -264,7 +264,7 @@ header.site-header {
 .card-date .card-frame { aspect-ratio: 2 / 3; }
 
 /* Category cards are the largest — give them more room in the grid */
-.grid:has(.card-category) { grid-template-columns: repeat(auto-fill, minmax(1920px, 1fr)); }
+.grid:has(.card-category) { grid-template-columns: repeat(auto-fill, minmax(680px, 1fr)); }
 .card-plate {
   padding: 14px 16px 16px;
   border-top: 1px solid var(--line);
