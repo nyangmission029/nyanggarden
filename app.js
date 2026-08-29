@@ -116,14 +116,14 @@ function buildSearchIndex() {
 function openSearchModal() {
   const searchIndex = buildSearchIndex();
 
-  const input = el("input", { type: "text", class: "search-input", placeholder: "Tìm theo ngày, địa điểm, năm..." });
-  const emptyMsg = () => el("p", { class: "search-empty" }, "Gõ để tìm theo ngày, địa điểm, năm hoặc danh mục...");
+  const input = el("input", { type: "text", class: "search-input", placeholder: "Search by date, location, year,... exp: 240212, ICN, MAMA" });
+  const emptyMsg = () => el("p", { class: "search-empty" }, "Type to search by date, location, year, or category... ");
   const resultsWrap = el("div", { class: "search-results" }, [emptyMsg()]);
 
-  const closeBtn = el("button", { type: "button", class: "modal-close", "aria-label": "Đóng" }, "×");
+  const closeBtn = el("button", { type: "button", class: "modal-close", "aria-label": "Close" }, "×");
   const modalBox = el("div", { class: "modal-box search-modal-box" }, [
     closeBtn,
-    el("h3", { class: "modal-title" }, "Tìm kiếm"),
+    el("h3", { class: "modal-title" }, "Search"),
     input,
     resultsWrap,
   ]);
@@ -154,7 +154,7 @@ function openSearchModal() {
     const matches = searchIndex.filter((item) => item.haystack.includes(q));
 
     if (!matches.length) {
-      resultsWrap.appendChild(el("p", { class: "search-empty" }, "Không tìm thấy kết quả nào."));
+      resultsWrap.appendChild(el("p", { class: "search-empty" }, "No matching results found."));
       return;
     }
 
@@ -214,7 +214,7 @@ function makeCardId(name) {
 function addCardTile(cat, yr) {
   return el("button", { class: "card add-card", type: "button" }, [
     el("span", { class: "add-card-plus" }, "+"),
-    el("span", { class: "add-card-label" }, "Thêm ngày mới"),
+    el("span", { class: "add-card-label" }, "New Date"),
   ]).also((btn) => btn.addEventListener("click", () => openAddCardModal(cat, yr)));
 }
 
