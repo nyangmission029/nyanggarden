@@ -281,7 +281,7 @@ header.site-header {
 }
  
 .card-plate .plate-title {
-  font-family: var(--font-substitle);
+  font-family: var(--font-subtitle);
   font-size: 19px;
   font-weight: 500;
   margin: 0;
