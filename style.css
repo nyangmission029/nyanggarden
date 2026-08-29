@@ -152,7 +152,7 @@ header.site-header {
 }
  
 .site-title {
-  font-family: var(--font-display);
+  font-family: var(--font-body);
   font-weight: 600;
   font-size: clamp(28px, 4vw, 42px);
   letter-spacing: 0.04em;
@@ -264,7 +264,7 @@ header.site-header {
 .card-date .card-frame { aspect-ratio: 2 / 3; }
 
 /* Category cards are the largest — give them more room in the grid */
-.grid:has(.card-category) { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+.grid:has(.card-category) { grid-template-columns: repeat(auto-fill, minmax(1920px, 1fr)); }
 .card-plate {
   padding: 14px 16px 16px;
   border-top: 1px solid var(--line);
@@ -281,7 +281,7 @@ header.site-header {
 }
  
 .card-plate .plate-title {
-  font-family: var(--font-display);
+  font-family: var(--font-substitle);
   font-size: 19px;
   font-weight: 500;
   margin: 0;
