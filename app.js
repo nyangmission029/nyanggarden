@@ -1,6 +1,6 @@
 /* =========================================================
    NYANG GARDEN — router + renderer
-   Reads data.json. No build step needed.
+   Reads data.json (site structure) + data/*.json (dates per year, loaded on demand).
    Routes:  #/                      -> categories (home)
             #/{categoryId}          -> years in that category
             #/{categoryId}/{yearId} -> dates in that year (cards link out)
@@ -8,11 +8,22 @@
 
 const app = document.getElementById("app");
 let DATA = null;
+const yearDatesCache = {}; // file path -> parsed array, so revisiting a year doesn't re-fetch
 
 async function loadData() {
   const res = await fetch("data.json", { cache: "no-store" });
   if (!res.ok) throw new Error("Could not load data.json");
   DATA = await res.json();
+}
+
+async function loadYearDates(yr) {
+  if (!yr.file) return [];
+  if (yearDatesCache[yr.file]) return yearDatesCache[yr.file];
+  const res = await fetch(yr.file, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Could not load ${yr.file}`);
+  const dates = await res.json();
+  yearDatesCache[yr.file] = dates;
+  return dates;
 }
 
 function el(tag, attrs = {}, children = []) {
@@ -85,12 +96,16 @@ function heroBanner() {
 
 /* ---------- Divider (Yarndings 20 symbol row, replaces plain border lines) ---------- */
 
-const DIVIDER_TEXT = "fahbzfhdcefjhmyffahbzfhdcefjhmyffahbzfhdcefjhmyfahbzfbahjfahbzf";
+const DIVIDER_TEXT = "fahbzfhdcefjhmyfahbzfhdcefjhmyfahbzfhdcefjhmyfahbzfbahjfahbzf";
 function divider() {
   return el("div", { class: "divider", "aria-hidden": "true" }, DIVIDER_TEXT);
 }
 
-/* ---------- Search (home page hero search icon) ---------- */
+/* ---------- Search (home page hero search icon) ----------
+   Dates now live in separate data/*.json files (lazy-loaded per year), so
+   search has to fetch every year's file once (in parallel) before it can
+   filter across everything. Already-visited years are served from
+   yearDatesCache instead of being re-fetched. ---------- */
 
 function normalizeText(str) {
   return (str || "")
@@ -100,63 +115,51 @@ function normalizeText(str) {
     .replace(/đ/g, "d");
 }
 
-function buildSearchIndex() {
+async function buildSearchIndex() {
   const index = [];
+  const yearRefs = [];
   DATA.categories.forEach((cat) => {
-    cat.years.forEach((yr) => {
-      yr.dates.forEach((d) => {
+    cat.years.forEach((yr) => yearRefs.push({ cat, yr }));
+  });
+
+  await Promise.all(
+    yearRefs.map(async ({ cat, yr }) => {
+      let dates;
+      try {
+        dates = await loadYearDates(yr);
+      } catch (err) {
+        return; // skip years whose file failed to load, don't block the rest
+      }
+      dates.forEach((d) => {
         const haystack = normalizeText(`${cat.name} ${yr.name} ${d.name} ${d.label || ""}`);
         index.push({ cat, yr, d, haystack });
       });
-    });
-  });
+    })
+  );
+
   return index;
 }
 
 function openSearchModal() {
-  const searchIndex = buildSearchIndex();
+  let searchIndex = null;
+  let indexError = null;
 
-  const input = el("input", { type: "text", class: "search-input", placeholder: "Search by date, location, year,... exp: 240212, ICN, MAMA" });
-  const emptyMsg = () => el("p", { class: "search-empty" }, "Type to search by date, location, year, or category... ");
-  const resultsWrap = el("div", { class: "search-results" }, [emptyMsg()]);
+  const input = el("input", { type: "text", class: "search-input", placeholder: "Search by date, location, year,... exp: 240212, ICN" });
+  const resultsWrap = el("div", { class: "search-results" });
 
-  const closeBtn = el("button", { type: "button", class: "modal-close", "aria-label": "Close" }, "×");
-  const modalBox = el("div", { class: "modal-box search-modal-box" }, [
-    closeBtn,
-    el("h3", { class: "modal-title" }, "Search"),
-    input,
-    resultsWrap,
-  ]);
-
-  const backdrop = el("div", { class: "modal-backdrop" }, [modalBox]);
-
-  function close() {
-    document.body.removeChild(backdrop);
-    document.removeEventListener("keydown", onKeyDown);
-  }
-  function onKeyDown(e) {
-    if (e.key === "Escape") close();
+  function showMessage(text) {
+    resultsWrap.replaceChildren(el("p", { class: "search-empty" }, text));
   }
 
-  backdrop.addEventListener("click", (e) => { if (e.target === backdrop) close(); });
-  closeBtn.addEventListener("click", close);
-  document.addEventListener("keydown", onKeyDown);
+  function runSearch() {
+    if (indexError) { showMessage(`Error: ${indexError.message}`); return; }
+    if (!searchIndex) { showMessage("Loading..."); return; }
 
-  input.addEventListener("input", () => {
     const q = normalizeText(input.value.trim());
-    resultsWrap.replaceChildren();
-
-    if (!q) {
-      resultsWrap.appendChild(emptyMsg());
-      return;
-    }
+    if (!q) { showMessage("Type to search by date, location, year, or category..."); return; }
 
     const matches = searchIndex.filter((item) => item.haystack.includes(q));
-
-    if (!matches.length) {
-      resultsWrap.appendChild(el("p", { class: "search-empty" }, "No matching results found."));
-      return;
-    }
+    if (!matches.length) { showMessage("No matching results found"); return; }
 
     const grid = el("div", { class: "grid search-result-grid" });
     matches.slice(0, 30).forEach((item) => {
@@ -173,11 +176,39 @@ function openSearchModal() {
         })
       );
     });
-    resultsWrap.appendChild(grid);
-  });
+    resultsWrap.replaceChildren(grid);
+  }
+
+  showMessage("Loading...");
+
+  const closeBtn = el("button", { type: "button", class: "modal-close", "aria-label": "Close" }, "×");
+  const modalBox = el("div", { class: "modal-box search-modal-box" }, [
+    closeBtn,
+    el("h3", { class: "modal-title" }, "Search"),
+    input,
+    resultsWrap,
+  ]);
+  const backdrop = el("div", { class: "modal-backdrop" }, [modalBox]);
+
+  function close() {
+    document.body.removeChild(backdrop);
+    document.removeEventListener("keydown", onKeyDown);
+  }
+  function onKeyDown(e) {
+    if (e.key === "Escape") close();
+  }
+
+  backdrop.addEventListener("click", (e) => { if (e.target === backdrop) close(); });
+  closeBtn.addEventListener("click", close);
+  document.addEventListener("keydown", onKeyDown);
+  input.addEventListener("input", runSearch);
 
   document.body.appendChild(backdrop);
   input.focus();
+
+  buildSearchIndex()
+    .then((idx) => { searchIndex = idx; runSearch(); })
+    .catch((err) => { indexError = err; runSearch(); });
 }
 
 /* ---------- Edit mode + inline "add date card" ---------- */
@@ -214,7 +245,7 @@ function makeCardId(name) {
 function addCardTile(cat, yr) {
   return el("button", { class: "card add-card", type: "button" }, [
     el("span", { class: "add-card-plus" }, "+"),
-    el("span", { class: "add-card-label" }, "New Date"),
+    el("span", { class: "add-card-label" }, "Thêm ngày mới"),
   ]).also((btn) => btn.addEventListener("click", () => openAddCardModal(cat, yr)));
 }
 
@@ -279,7 +310,8 @@ function openAddCardModal(cat, yr) {
       cover: coverUrl || "images/covers/REPLACE_ME.jpg",
       link: linkInput.value.trim() || "https://mega.nz/folder/YOUR_LINK_HERE",
     };
-    outputHint.textContent = `Dán đoạn dưới vào mảng "dates" của "${cat.name}" → "${yr.name}" trong data.json:`;
+    const fileName = yr.file || "(chưa có file cho năm này — tạo mới trong thư mục data/)";
+    outputHint.textContent = `Dán đoạn dưới vào MẢNG trong file "${fileName}" (không phải data.json):`;
     outputJson.value = JSON.stringify(entry, null, 2) + ",";
     outputBox.hidden = false;
     if (!coverUrl) {
@@ -356,7 +388,7 @@ function renderHome() {
         el("h2", {}, "Collections"),
         el("span", { class: "section-count" }, `${DATA.categories.length} total`),
       ]),
-      DATA.categories.length ? grid : emptyState("No values yet — add one in data.json"),
+      DATA.categories.length ? grid : emptyState("No collections yet — add one in data.json"),
     ]),
     footer()
   );
@@ -372,7 +404,6 @@ function renderCategory(catId) {
       card({
         href: `#/${cat.id}/${yr.id}`,
         cover: yr.cover,
-        eyebrow: `${yr.dates.length} set${yr.dates.length === 1 ? "" : "s"}`,
         title: yr.name,
         extraClass: "card-year",
       })
@@ -392,13 +423,41 @@ function renderCategory(catId) {
   );
 }
 
-function renderYear(catId, yearId) {
+async function renderYear(catId, yearId) {
   const cat = DATA.categories.find((c) => c.id === catId);
   const yr = cat && cat.years.find((y) => y.id === yearId);
   if (!cat || !yr) return renderNotFound();
   document.title = `${cat.name} ${yr.name} — ${DATA.siteName}`;
+
+  // Show a loading state immediately, then swap in the real grid once the
+  // per-year dates file has loaded.
+  app.replaceChildren(
+    header(),
+    el("main", { class: "wrap" }, [
+      breadcrumb([
+        { label: "Home", href: "#/" },
+        { label: cat.name, href: `#/${cat.id}` },
+        { label: yr.name },
+      ]),
+      el("div", { class: "section-head" }, [el("h2", {}, `${cat.name} — ${yr.name}`)]),
+      emptyState("Đang tải…"),
+    ]),
+    footer()
+  );
+
+  let dates;
+  try {
+    dates = await loadYearDates(yr);
+  } catch (err) {
+    app.querySelector(".empty-state").textContent = `Không tải được dữ liệu năm này: ${err.message}`;
+    return;
+  }
+
+  // If the user has since navigated away while this was loading, don't render stale data.
+  if (location.hash.replace(/^#\/?/, "") !== `${catId}/${yearId}`) return;
+
   const grid = el("div", { class: "grid" });
-  yr.dates.forEach((d) => {
+  dates.forEach((d) => {
     grid.appendChild(
       card({
         href: d.link,
@@ -413,6 +472,7 @@ function renderYear(catId, yearId) {
     );
   });
   if (isEditMode()) grid.appendChild(addCardTile(cat, yr));
+
   app.replaceChildren(
     header(),
     el("main", { class: "wrap" }, [
@@ -423,9 +483,9 @@ function renderYear(catId, yearId) {
       ]),
       el("div", { class: "section-head" }, [
         el("h2", {}, `${cat.name} — ${yr.name}`),
-        el("span", { class: "section-count" }, `${yr.dates.length} total`),
+        el("span", { class: "section-count" }, `${dates.length} total`),
       ]),
-      yr.dates.length || isEditMode() ? grid : emptyState("No sets added yet — add one in data.json"),
+      dates.length || isEditMode() ? grid : emptyState("No sets added yet — add one in this year's data file"),
     ]),
     footer()
   );
@@ -451,6 +511,12 @@ function route() {
 }
 
 window.addEventListener("hashchange", route);
+
+loadData()
+  .then(route)
+  .catch((err) => {
+    app.replaceChildren(el("div", { class: "wrap" }, `Lỗi tải dữ liệu: ${err.message}`));
+  });
 
 loadData()
   .then(route)
