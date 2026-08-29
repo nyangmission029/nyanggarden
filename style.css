@@ -266,7 +266,7 @@ header.site-header {
 /* Per-level grid widths: category = 680px, year = 340px, date = 220px */
 .grid:has(.card-category) { grid-template-columns: repeat(auto-fill, minmax(680px, 1fr)); }
 .grid:has(.card-year) { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
-.grid:has(.card-date) { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+.grid:has(.card-date) { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
 
 .card-plate {
   padding: 14px 16px 16px;
@@ -347,7 +347,7 @@ footer.site-footer {
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
-  padding: 4px 0;
+  padding: 12px 0;
 }
  
 /* ---------- Add-card tile + modal (edit mode only) ---------- */
