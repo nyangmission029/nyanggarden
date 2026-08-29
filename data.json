@@ -18,13 +18,13 @@
           "cover": "images/covers/airport-2020-21-cover.jpg",
           "dates": [
             {
-      "id": "210129",
-      "name": "210129",
-      "label": "서가대",
-      "cover": "https://res.cloudinary.com/jz2djjuo/image/upload/v1787980093/jgedsrivb485gjy4gvkt.jpg",
-      "link": "https://x.com/ONE_0209/status/1355320410108116993?s=20"
-      },
-          ]
+        "id": "210129",
+        "name": "210129",
+        "label": "서가대",
+        "cover": "https://res.cloudinary.com/jz2djjuo/image/upload/v1787980093/jgedsrivb485gjy4gvkt.jpg",
+        "link": "https://x.com/ONE_0209/status/1355320410108116993?s=20"
+          }
+      ]
         },
         {
           "id": "2022",
