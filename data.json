@@ -2,7 +2,7 @@
   "siteName": "NYANG GARDEN",
   "siteSubtitle": "The Nyang Mission for World's Cutest Nyangie",
   "hero": {
-    "image": "images/covers/hero-cover.jpg",
+    "image": "https://res.cloudinary.com/jz2djjuo/image/upload/v1787976529/wjvqpvrprmzxormq6zqs.jpg",
     "title": "NYANG GARDEN",
     "subtitle": "The Nyang Mission for World's Cutest Nyangie"
   },
@@ -10,7 +10,7 @@
     {
       "id": "offstage",
       "name": "OFFSTAGE/AIRPORT",
-      "cover": "images/covers/offstage-cover.jpg",
+      "cover": "https://res.cloudinary.com/jz2djjuo/image/upload/v1787976515/jaiszr2r1jt93svvdxy1.jpg",
       "years": [
         {
           "id": "2020-2021",
@@ -86,7 +86,7 @@
     {
       "id": "event",
       "name": "EVENT",
-      "cover": "images/covers/event-cover.jpg",
+      "cover": "https://res.cloudinary.com/jz2djjuo/image/upload/v1787976462/ujyp2vad0eamljs3au9j.jpg",
       "years": [
         {
           "id": "2024",
