@@ -83,7 +83,7 @@ function heroBanner() {
 
 /* ---------- Divider (Yarndings 20 symbol row, replaces plain border lines) ---------- */
 
-const DIVIDER_TEXT = "fahbzfhdcefjhmyffahbzfhdcefjhmyffahbzfhdcefjhmyffahbzfbahjf";
+const DIVIDER_TEXT = "fahbzfhdcefjhmyffahbzfhdcefjhmyffahbzfhdcefjhmyfahbzfbahjfahbzf";
 function divider() {
   return el("div", { class: "divider", "aria-hidden": "true" }, DIVIDER_TEXT);
 }
@@ -234,7 +234,7 @@ function header() {
 function footer() {
   return el("footer", { class: "site-footer" }, [
     divider(),
-    el("div", { class: "wrap" }, `© ${new Date().getFullYear()} — ${DATA.siteName}`),
+    el("div", { class: "wrap" }, `© ${new Date().getFullYear()} — All images belong to their respective owners. No copyright infringement intended.`),
   ]);
 }
 
@@ -264,7 +264,7 @@ function renderHome() {
         el("h2", {}, "Collections"),
         el("span", { class: "section-count" }, `${DATA.categories.length} total`),
       ]),
-      DATA.categories.length ? grid : emptyState("No collections yet — add one in data.json"),
+      DATA.categories.length ? grid : emptyState("No values yet — add one in data.json"),
     ]),
     footer()
   );
@@ -289,7 +289,7 @@ function renderCategory(catId) {
   app.replaceChildren(
     header(),
     el("main", { class: "wrap" }, [
-      breadcrumb([{ label: "Exhibition", href: "#/" }, { label: cat.name }]),
+      breadcrumb([{ label: "Home", href: "#/" }, { label: cat.name }]),
       el("div", { class: "section-head" }, [
         el("h2", {}, cat.name),
         el("span", { class: "section-count" }, `${cat.years.length} total`),
@@ -325,7 +325,7 @@ function renderYear(catId, yearId) {
     header(),
     el("main", { class: "wrap" }, [
       breadcrumb([
-        { label: "Exhibition", href: "#/" },
+        { label: "Home", href: "#/" },
         { label: cat.name, href: `#/${cat.id}` },
         { label: yr.name },
       ]),
@@ -343,7 +343,7 @@ function renderNotFound() {
   app.replaceChildren(
     header(),
     el("main", { class: "wrap" }, [
-      breadcrumb([{ label: "Exhibition", href: "#/" }, { label: "Not found" }]),
+      breadcrumb([{ label: "Home", href: "#/" }, { label: "Not found" }]),
       emptyState("That page doesn't exist."),
     ]),
     footer()
