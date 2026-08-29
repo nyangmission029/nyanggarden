@@ -218,7 +218,7 @@ header.site-header {
  
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(680px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   gap: var(--gap);
   padding-bottom: 64px;
 }
@@ -269,7 +269,16 @@ header.site-header {
   padding: 14px 16px 16px;
   border-top: 1px solid var(--line);
 }
- 
+ .grid:has(.card-year { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+.card-plate {
+  padding: 14px 16px 16px;
+  border-top: 1px solid var(--line);
+}
+.grid:has(.card-category) { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+.card-plate {
+  padding: 14px 16px 16px;
+  border-top: 1px solid var(--line);
+}
 .card-plate .plate-eyebrow {
   display: block;
   font-family: var(--font-mono);
