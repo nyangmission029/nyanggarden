@@ -264,7 +264,7 @@ header.site-header {
 .card-date .card-frame { aspect-ratio: 2 / 3; }
 
 /* Per-level grid widths: category = 680px, year = 340px, date = 220px */
-.grid:has(.card-category) { grid-template-columns: repeat(auto-fill, minmax(680px, 1fr)); }
+.grid:has(.card-category) { grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); }
 .grid:has(.card-year) { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
 .grid:has(.card-date) { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
 
@@ -347,7 +347,7 @@ footer.site-footer {
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
-  padding: 18px 0 18px;
+  padding: 12px 0 18px;
   text-transform: none; /* tránh bị footer ép viết hoa -> đổi hẳn sang bộ icon khác */
 }
  
@@ -552,3 +552,46 @@ footer.site-footer {
   transition: border-color 0.2s ease, color 0.2s ease;
 }
 .copy-btn:hover, .copy-btn.is-copied { border-color: var(--accent-bright); color: var(--accent-bright); }
+
+/* ---------- Search modal (home page hero search icon) ---------- */
+
+.search-modal-box {
+  max-width: 760px;
+}
+
+.search-input {
+  width: 100%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 15px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+}
+
+.search-input:focus-visible { border-color: var(--accent-bright); }
+
+.search-results {
+  margin-top: 18px;
+}
+
+.search-empty {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.04em;
+  text-align: center;
+  padding: 28px 0;
+}
+
+.search-result-grid {
+  max-height: 55vh;
+  overflow-y: auto;
+  padding-bottom: 4px;
+  padding-right: 2px;
+}
+
+@media (max-width: 560px) {
+  .search-modal-box { padding: 22px; }
+}
