@@ -68,37 +68,3 @@ Thêm object vào mảng `"categories"` ở ngoài cùng:
 
 > Lưu ý: `link` trong mục ngày là **link ra ngoài** (Google Drive, ổ lưu trữ ảnh gốc...). Web này **không lưu ảnh chất lượng gốc**, chỉ lưu ảnh bìa nhỏ để hiển thị đẹp — vì vậy web luôn nhẹ và load nhanh dù bạn có hàng nghìn ảnh gốc ở nơi khác.
 
-## Cách xem thử trên máy
-
-Vì trình duyệt chặn `fetch()` đọc file JSON khi mở trực tiếp bằng `file://`, cần chạy 1 server nhỏ:
-
-```bash
-# Nếu có Python
-python3 -m http.server 8000
-# rồi mở http://localhost:8000
-
-# Hoặc nếu có Node
-npx serve .
-```
-
-## Cách deploy miễn phí
-
-**Netlify (khuyên dùng, kéo-thả):**
-1. Vào https://app.netlify.com/drop
-2. Kéo cả thư mục `idol-showroom` vào trang đó
-3. Xong — có link web ngay, mỗi lần sửa `data.json` chỉ cần kéo-thả lại
-
-**Vercel / GitHub Pages:** đẩy toàn bộ thư mục này lên 1 GitHub repo, rồi kết nối repo đó với Vercel hoặc bật GitHub Pages trong Settings của repo.
-
-## Tuỳ chỉnh giao diện
-
-Toàn bộ màu sắc, font chữ nằm ở đầu file `style.css`, trong phần `:root { ... }`:
-
-```css
---bg: #101014;        /* màu nền */
---accent: #c9a063;    /* màu nhấn */
---font-display: ...;  /* font tiêu đề */
---font-body: ...;     /* font nội dung */
-```
-
-Đổi giá trị ở đây là đổi được cả giao diện mà không cần sửa gì khác.
