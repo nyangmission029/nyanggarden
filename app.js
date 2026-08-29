@@ -83,7 +83,7 @@ function heroBanner() {
 
 /* ---------- Divider (Yarndings 20 symbol row, replaces plain border lines) ---------- */
 
-const DIVIDER_TEXT = "fahbzfhdcefjhmyffahbzfhdcefjhmyffahbzfhdcefjhmyffahbz";
+const DIVIDER_TEXT = "fahbzfhdcefjhmyffahbzfhdcefjhmyffahbzfhdcefjhmyffahbzfbahjf";
 function divider() {
   return el("div", { class: "divider", "aria-hidden": "true" }, DIVIDER_TEXT);
 }
@@ -93,7 +93,7 @@ function divider() {
 const CLOUD_NAME = "jz2djjuo";
 const UPLOAD_PRESET = "nyangmission029";
 const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
-const EDIT_SECRET = "nyang029"; // đổi chuỗi này nếu muốn dùng "mật khẩu" khác trong link
+const EDIT_SECRET = "nyangmi"; // đổi chuỗi này nếu muốn dùng "mật khẩu" khác trong link
 
 function isEditMode() {
   return new URLSearchParams(location.search).get("edit") === EDIT_SECRET;
