@@ -10,7 +10,7 @@
     {
       "id": "offstage",
       "name": "OFFSTAGE/AIRPORT",
-      "cover": "https://res.cloudinary.com/jz2djjuo/image/upload/v1787976515/jaiszr2r1jt93svvdxy1.jpg",
+      "cover": "https://res.cloudinary.com/jz2djjuo/image/upload/v1788056061/qwm8tm8svatg1ewe5o67.jpg",
       "years": [
         {
           "id": "2020-2021",
@@ -59,36 +59,36 @@
     {
       "id": "event",
       "name": "EVENT",
-      "cover": "https://res.cloudinary.com/jz2djjuo/image/upload/v1787976462/ujyp2vad0eamljs3au9j.jpg",
+      "cover": "https://res.cloudinary.com/jz2djjuo/image/upload/v1788056061/ccne7t3fankwmxuhu1zk.jpg",
       "years": [
         {
           "id": "2020-2021",
           "name": "2020-2021",
-          "cover": "images/covers/award-2020-2021-cover.jpg",
+          "cover": "https://res.cloudinary.com/jz2djjuo/image/upload/v1788056061/ygazbrsteki2mrsvabnr.jpg",
           "file": "data/event-2022-2021.json"
         },
         {
           "id": "2022",
           "name": "2022",
-          "cover": "images/covers/award-2022-cover.jpg",
+          "cover": "https://res.cloudinary.com/jz2djjuo/image/upload/v1788056062/fa7niln4yics9jvwyfkp.jpg",
           "file": "data/event-2022.json"
         },
         {
           "id": "2023",
           "name": "2023",
-          "cover": "images/covers/award-2023-cover.jpg",
+          "cover": "https://res.cloudinary.com/jz2djjuo/image/upload/v1788056061/ymwmu5iuzkrfzaxovheq.jpg",
           "file": "data/event-2023.json"
         },
         {
           "id": "2024",
           "name": "2024",
-          "cover": "images/covers/award-2024-cover.jpg",
+          "cover": "https://res.cloudinary.com/jz2djjuo/image/upload/v1788056061/knlaa5axaqm9vujej3vz.jpg",
           "file": "data/event-2024.json"
         },
         {
           "id": "2025",
           "name": "2025",
-          "cover": "images/covers/award-2025-cover.jpg",
+          "cover": "https://res.cloudinary.com/jz2djjuo/image/upload/v1788056061/fdjt5ciwfkyquredzvgb.jpg",
           "file": "data/event-2025.json"
         },
         {
@@ -104,6 +104,12 @@
           "file": "data/event-2027.json"
         }
       ]
-    }
+    },
+    {
+  "id": "others",
+  "name": "OTHERS",
+  "cover": "images/covers/others-cover.jpg",
+  "file": "data/others.json"
+  }
   ]
 }
