@@ -1,14 +1,15 @@
 /* =========================================================
    NYANG GARDEN — router + renderer
-   Reads data.json (site structure) + data/*.json (dates per year, loaded on demand).
-   Routes:  #/                      -> categories (home)
-            #/{categoryId}          -> years in that category
-            #/{categoryId}/{yearId} -> dates in that year (cards link out)
+   Reads data.json (site structure) + data/*.json (dates, loaded on demand).
+
+   Two category shapes are supported:
+   - 3-level: category has "years" (array) -> #/{cat}/{year} shows dates
+   - 2-level: category has "file" directly (no "years") -> #/{cat} shows dates
    ========================================================= */
 
 const app = document.getElementById("app");
 let DATA = null;
-const yearDatesCache = {}; // file path -> parsed array, so revisiting a year doesn't re-fetch
+const yearDatesCache = {}; // file path -> parsed array, so revisiting doesn't re-fetch
 
 async function loadData() {
   const res = await fetch("data.json", { cache: "no-store" });
@@ -60,7 +61,6 @@ function card({ href, cover, eyebrow, title, sub, external = false, target = "_s
 }
 
 function breadcrumb(parts) {
-  // parts: [{label, href}] last one has no href (current)
   const wrap = el("nav", { class: "floor-guide", "aria-label": "Breadcrumb" });
   parts.forEach((p, i) => {
     if (i > 0) wrap.appendChild(el("span", { class: "sep" }, "/"));
@@ -94,7 +94,7 @@ function heroBanner() {
   ]);
 }
 
-/* ---------- Divider (Yarndings 20 symbol row, replaces plain border lines) ---------- */
+/* ---------- Divider (Yarndings 20 symbol row) ---------- */
 
 const DIVIDER_TEXT = "fahbzfhdcefjhmyffahbzfhdcefjhmyffahbzfhdcefjhmyfahbzfbahjfahbzf";
 function divider() {
@@ -102,10 +102,8 @@ function divider() {
 }
 
 /* ---------- Search (home page hero search icon) ----------
-   Dates now live in separate data/*.json files (lazy-loaded per year), so
-   search has to fetch every year's file once (in parallel) before it can
-   filter across everything. Already-visited years are served from
-   yearDatesCache instead of being re-fetched. ---------- */
+   Works across BOTH category shapes: 3-level (category -> years -> dates)
+   and 2-level (category -> dates directly via category.file). ---------- */
 
 function normalizeText(str) {
   return (str || "")
@@ -117,22 +115,27 @@ function normalizeText(str) {
 
 async function buildSearchIndex() {
   const index = [];
-  const yearRefs = [];
+  const refs = [];
+
   DATA.categories.forEach((cat) => {
-    cat.years.forEach((yr) => yearRefs.push({ cat, yr }));
+    if (cat.years) {
+      cat.years.forEach((yr) => refs.push({ cat, yr, yrLabel: yr.name }));
+    } else if (cat.file) {
+      refs.push({ cat, yr: cat, yrLabel: null }); // 2-level: category itself holds the dates file
+    }
   });
 
   await Promise.all(
-    yearRefs.map(async ({ cat, yr }) => {
+    refs.map(async ({ cat, yr, yrLabel }) => {
       let dates;
       try {
         dates = await loadYearDates(yr);
       } catch (err) {
-        return; // skip years whose file failed to load, don't block the rest
+        return; // skip years/categories whose file failed to load
       }
       dates.forEach((d) => {
-        const haystack = normalizeText(`${cat.name} ${yr.name} ${d.name} ${d.label || ""}`);
-        index.push({ cat, yr, d, haystack });
+        const haystack = normalizeText(`${cat.name} ${yrLabel || ""} ${d.name} ${d.label || ""}`);
+        index.push({ cat, yrLabel, d, haystack });
       });
     })
   );
@@ -169,7 +172,7 @@ function openSearchModal() {
           target: "_blank",
           external: true,
           cover: item.d.cover,
-          eyebrow: `${item.cat.name} / ${item.yr.name}`,
+          eyebrow: item.yrLabel ? `${item.cat.name} / ${item.yrLabel}` : item.cat.name,
           title: item.d.label || item.d.name,
           sub: item.d.label ? item.d.name : null,
           extraClass: "card-date",
@@ -216,7 +219,7 @@ function openSearchModal() {
 const CLOUD_NAME = "jz2djjuo";
 const UPLOAD_PRESET = "nyangmission029";
 const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
-const EDIT_SECRET = "nyangmi"; // đổi chuỗi này nếu muốn dùng "mật khẩu" khác trong link
+const EDIT_SECRET = "nyangmi";
 
 function isEditMode() {
   return new URLSearchParams(location.search).get("edit") === EDIT_SECRET;
@@ -249,7 +252,6 @@ function addCardTile(cat, yr) {
   ]).also((btn) => btn.addEventListener("click", () => openAddCardModal(cat, yr)));
 }
 
-// small helper so we can chain an event listener right after el() without a temp var
 Element.prototype.also = function (fn) { fn(this); return this; };
 
 function openAddCardModal(cat, yr) {
@@ -310,7 +312,7 @@ function openAddCardModal(cat, yr) {
       cover: coverUrl || "images/covers/REPLACE_ME.jpg",
       link: linkInput.value.trim() || "https://mega.nz/folder/YOUR_LINK_HERE",
     };
-    const fileName = yr.file || "(chưa có file cho năm này — tạo mới trong thư mục data/)";
+    const fileName = yr.file || "(chưa có file cho mục này — tạo mới trong thư mục data/)";
     outputHint.textContent = `Dán đoạn dưới vào MẢNG trong file "${fileName}" (không phải data.json):`;
     outputJson.value = JSON.stringify(entry, null, 2) + ",";
     outputBox.hidden = false;
@@ -328,9 +330,12 @@ function openAddCardModal(cat, yr) {
   });
 
   const closeBtn = el("button", { type: "button", class: "modal-close", "aria-label": "Đóng" }, "×");
+  // Skip the " / year" part of the title when this is a 2-level category
+  // (cat and yr share the same name in that case).
+  const titleText = cat.name === yr.name ? `Thêm mới — ${cat.name}` : `Thêm ngày mới — ${cat.name} / ${yr.name}`;
   const modalBox = el("div", { class: "modal-box" }, [
     closeBtn,
-    el("h3", { class: "modal-title" }, `Thêm ngày mới — ${cat.name} / ${yr.name}`),
+    el("h3", { class: "modal-title" }, titleText),
     el("label", { class: "cc-field" }, [el("span", {}, "Tên hiển thị (VD: 21.08.2024)"), nameInput]),
     el("label", { class: "cc-field" }, [el("span", {}, "Mô tả ngắn — không bắt buộc"), labelInput]),
     el("label", { class: "cc-field" }, [el("span", {}, "Link kho ảnh gốc — không bắt buộc"), linkInput]),
@@ -374,7 +379,7 @@ function renderHome() {
       card({
         href: `#/${cat.id}`,
         cover: cat.cover,
-        eyebrow: `${cat.years.length} year${cat.years.length === 1 ? "" : "s"}`,
+        eyebrow: cat.years ? `${cat.years.length} year${cat.years.length === 1 ? "" : "s"}` : undefined,
         title: cat.name,
         extraClass: "card-category",
       })
@@ -394,9 +399,8 @@ function renderHome() {
   );
 }
 
-function renderCategory(catId) {
-  const cat = DATA.categories.find((c) => c.id === catId);
-  if (!cat) return renderNotFound();
+// Renders the "3-level" category page: a grid of year cards.
+function renderCategoryYears(cat) {
   document.title = `${cat.name} — ${DATA.siteName}`;
   const grid = el("div", { class: "grid" });
   cat.years.forEach((yr) => {
@@ -423,23 +427,17 @@ function renderCategory(catId) {
   );
 }
 
-async function renderYear(catId, yearId) {
-  const cat = DATA.categories.find((c) => c.id === catId);
-  const yr = cat && cat.years.find((y) => y.id === yearId);
-  if (!cat || !yr) return renderNotFound();
-  document.title = `${cat.name} ${yr.name} — ${DATA.siteName}`;
+// Renders a "dates" grid directly. Used for both:
+// - a 3-level category's specific year (breadcrumb has 3 parts)
+// - a 2-level category (breadcrumb has 2 parts, cat itself holds "file")
+async function renderDatesPage({ source, breadcrumbParts, heading, routeKey, editContext }) {
+  document.title = `${heading} — ${DATA.siteName}`;
 
-  // Show a loading state immediately, then swap in the real grid once the
-  // per-year dates file has loaded.
   app.replaceChildren(
     header(),
     el("main", { class: "wrap" }, [
-      breadcrumb([
-        { label: "Home", href: "#/" },
-        { label: cat.name, href: `#/${cat.id}` },
-        { label: yr.name },
-      ]),
-      el("div", { class: "section-head" }, [el("h2", {}, `${cat.name} — ${yr.name}`)]),
+      breadcrumb(breadcrumbParts),
+      el("div", { class: "section-head" }, [el("h2", {}, heading)]),
       emptyState("Đang tải…"),
     ]),
     footer()
@@ -447,14 +445,14 @@ async function renderYear(catId, yearId) {
 
   let dates;
   try {
-    dates = await loadYearDates(yr);
+    dates = await loadYearDates(source);
   } catch (err) {
-    app.querySelector(".empty-state").textContent = `Không tải được dữ liệu năm này: ${err.message}`;
+    app.querySelector(".empty-state").textContent = `Không tải được dữ liệu: ${err.message}`;
     return;
   }
 
-  // If the user has since navigated away while this was loading, don't render stale data.
-  if (location.hash.replace(/^#\/?/, "") !== `${catId}/${yearId}`) return;
+  // Bail if the user navigated elsewhere while this was loading.
+  if (location.hash.replace(/^#\/?/, "") !== routeKey) return;
 
   const grid = el("div", { class: "grid" });
   dates.forEach((d) => {
@@ -471,24 +469,59 @@ async function renderYear(catId, yearId) {
       })
     );
   });
-  if (isEditMode()) grid.appendChild(addCardTile(cat, yr));
+  if (isEditMode()) grid.appendChild(addCardTile(editContext.cat, editContext.yr));
 
   app.replaceChildren(
     header(),
     el("main", { class: "wrap" }, [
-      breadcrumb([
-        { label: "Home", href: "#/" },
-        { label: cat.name, href: `#/${cat.id}` },
-        { label: yr.name },
-      ]),
+      breadcrumb(breadcrumbParts),
       el("div", { class: "section-head" }, [
-        el("h2", {}, `${cat.name} — ${yr.name}`),
+        el("h2", {}, heading),
         el("span", { class: "section-count" }, `${dates.length} total`),
       ]),
-      dates.length || isEditMode() ? grid : emptyState("No sets added yet — add one in this year's data file"),
+      dates.length || isEditMode() ? grid : emptyState("No sets added yet — add one in this data file"),
     ]),
     footer()
   );
+}
+
+function renderCategory(catId) {
+  const cat = DATA.categories.find((c) => c.id === catId);
+  if (!cat) return renderNotFound();
+
+  if (cat.years) {
+    return renderCategoryYears(cat);
+  }
+
+  if (cat.file) {
+    return renderDatesPage({
+      source: cat,
+      breadcrumbParts: [{ label: "Home", href: "#/" }, { label: cat.name }],
+      heading: cat.name,
+      routeKey: cat.id,
+      editContext: { cat, yr: { name: cat.name, file: cat.file } },
+    });
+  }
+
+  return renderNotFound();
+}
+
+function renderYear(catId, yearId) {
+  const cat = DATA.categories.find((c) => c.id === catId);
+  const yr = cat && cat.years && cat.years.find((y) => y.id === yearId);
+  if (!cat || !yr) return renderNotFound();
+
+  return renderDatesPage({
+    source: yr,
+    breadcrumbParts: [
+      { label: "Home", href: "#/" },
+      { label: cat.name, href: `#/${cat.id}` },
+      { label: yr.name },
+    ],
+    heading: `${cat.name} — ${yr.name}`,
+    routeKey: `${catId}/${yearId}`,
+    editContext: { cat, yr },
+  });
 }
 
 function renderNotFound() {
