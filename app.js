@@ -78,9 +78,9 @@ const ICON_FACEBOOK = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13
 
 // Fill in the actual links here — this is the only part you need to edit.
 const CONTACT_LINKS = {
-  email: "mailto:youremail@gmail.com",
-  x: "https://x.com/your_handle",
-  facebook: "https://facebook.com/your_page",
+  email: "reviu2021@gmail.com",
+  x: "https://x.com/nyangmission029",
+  facebook: "https://facebook.com/nyanggarden",
 };
 
 // Reusable icon buttons — used both on the hero (home page) and the plain
