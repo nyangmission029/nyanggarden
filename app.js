@@ -10,6 +10,7 @@
 const app = document.getElementById("app");
 let DATA = null;
 const yearDatesCache = {}; // file path -> parsed array, so revisiting doesn't re-fetch
+const categoryFileCache = {}; // file path -> parsed content (array OR {years:[...]}) for cat.file categories
 
 async function loadData() {
   const res = await fetch("data.json", { cache: "no-store" });
@@ -25,6 +26,19 @@ async function loadYearDates(yr) {
   const dates = await res.json();
   yearDatesCache[yr.file] = dates;
   return dates;
+}
+
+// A category with "file" (no inline "years") can point to either:
+// - a flat array of leaf entries (2-level, e.g. OTHERS)
+// - an object { years: [{ id, name, cover, dates: [...] }] } (3-level all in one file, e.g. CONCERT/FANCAM)
+async function loadCategoryFile(cat) {
+  if (!cat.file) return null;
+  if (categoryFileCache[cat.file]) return categoryFileCache[cat.file];
+  const res = await fetch(cat.file, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Could not load ${cat.file}`);
+  const content = await res.json();
+  categoryFileCache[cat.file] = content;
+  return content;
 }
 
 function el(tag, attrs = {}, children = []) {
@@ -78,9 +92,9 @@ const ICON_FACEBOOK = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13
 
 // Fill in the actual links here — this is the only part you need to edit.
 const CONTACT_LINKS = {
-  email: "reviu2021@gmail.com",
-  x: "https://x.com/nyangmission029",
-  facebook: "https://facebook.com/nyanggarden",
+  email: "mailto:youremail@gmail.com",
+  x: "https://x.com/your_handle",
+  facebook: "https://facebook.com/your_page",
 };
 
 // Reusable icon buttons — used both on the hero (home page) and the plain
@@ -174,28 +188,51 @@ function normalizeText(str) {
 
 async function buildSearchIndex() {
   const index = [];
-  const refs = [];
+  const yearRefs = [];
+  const fileCats = [];
 
   DATA.categories.forEach((cat) => {
     if (cat.years) {
-      cat.years.forEach((yr) => refs.push({ cat, yr, yrLabel: yr.name }));
+      cat.years.forEach((yr) => yearRefs.push({ cat, yr, yrLabel: yr.name }));
     } else if (cat.file) {
-      refs.push({ cat, yr: cat, yrLabel: null }); // 2-level: category itself holds the dates file
+      fileCats.push(cat);
     }
   });
 
+  function pushEntry(catName, yrLabel, d) {
+    const haystack = normalizeText(`${catName} ${yrLabel || ""} ${d.name} ${d.label || ""}`);
+    index.push({ catName, yrLabel, d, haystack });
+  }
+
   await Promise.all(
-    refs.map(async ({ cat, yr, yrLabel }) => {
+    yearRefs.map(async ({ cat, yr, yrLabel }) => {
       let dates;
       try {
         dates = await loadYearDates(yr);
       } catch (err) {
-        return; // skip years/categories whose file failed to load
+        return; // skip years whose file failed to load
       }
-      dates.forEach((d) => {
-        const haystack = normalizeText(`${cat.name} ${yrLabel || ""} ${d.name} ${d.label || ""}`);
-        index.push({ cat, yrLabel, d, haystack });
-      });
+      dates.forEach((d) => pushEntry(cat.name, yrLabel, d));
+    })
+  );
+
+  await Promise.all(
+    fileCats.map(async (cat) => {
+      let content;
+      try {
+        content = await loadCategoryFile(cat);
+      } catch (err) {
+        return; // skip categories whose file failed to load
+      }
+      if (Array.isArray(content)) {
+        // Flat 2-level category (e.g. OTHERS)
+        content.forEach((d) => pushEntry(cat.name, null, d));
+      } else if (content && Array.isArray(content.years)) {
+        // Nested 3-level-in-one-file category (e.g. CONCERT, FANCAM)
+        content.years.forEach((yr) => {
+          (yr.dates || []).forEach((d) => pushEntry(cat.name, yr.name, d));
+        });
+      }
     })
   );
 
@@ -231,7 +268,7 @@ function openSearchModal() {
           target: "_blank",
           external: true,
           cover: item.d.cover,
-          eyebrow: item.yrLabel ? `${item.cat.name} / ${item.yrLabel}` : item.cat.name,
+          eyebrow: item.yrLabel ? `${item.catName} / ${item.yrLabel}` : item.catName,
           title: item.d.label || item.d.name,
           sub: item.d.label ? item.d.name : null,
           extraClass: "card-date",
@@ -372,7 +409,10 @@ function openAddCardModal(cat, yr) {
       link: linkInput.value.trim() || "https://mega.nz/folder/YOUR_LINK_HERE",
     };
     const fileName = yr.file || "(chưa có file cho mục này — tạo mới trong thư mục data/)";
-    outputHint.textContent = `Dán đoạn dưới vào MẢNG trong file "${fileName}" (không phải data.json):`;
+    const hintLocation = yr.nestedYear
+      ? `mảng "dates" của năm "${yr.name}" bên trong file "${fileName}"`
+      : `MẢNG trong file "${fileName}"`;
+    outputHint.textContent = `Dán đoạn dưới vào ${hintLocation} (không phải data.json):`;
     outputJson.value = JSON.stringify(entry, null, 2) + ",";
     outputBox.hidden = false;
     if (!coverUrl) {
@@ -498,32 +538,10 @@ function renderCategoryYears(cat) {
   );
 }
 
-// Renders a "dates" grid directly. Used for both:
-// - a 3-level category's specific year (breadcrumb has 3 parts)
-// - a 2-level category (breadcrumb has 2 parts, cat itself holds "file")
-async function renderDatesPage({ source, breadcrumbParts, heading, routeKey, editContext }) {
+// Renders a "dates" grid directly from an already-available array (no fetching).
+// Shared by: fetch-then-render flows below, and any future synchronous case.
+function renderDatesGrid({ dates, breadcrumbParts, heading, editContext }) {
   document.title = `${heading} — ${DATA.siteName}`;
-
-  app.replaceChildren(
-    header(),
-    el("main", { class: "wrap" }, [
-      breadcrumb(breadcrumbParts),
-      el("div", { class: "section-head" }, [el("h2", {}, heading)]),
-      emptyState("Đang tải…"),
-    ]),
-    footer()
-  );
-
-  let dates;
-  try {
-    dates = await loadYearDates(source);
-  } catch (err) {
-    app.querySelector(".empty-state").textContent = `Không tải được dữ liệu: ${err.message}`;
-    return;
-  }
-
-  if (location.hash.replace(/^#\/?/, "") !== routeKey) return;
-
   const grid = el("div", { class: "grid" });
   dates.forEach((d) => {
     grid.appendChild(
@@ -555,7 +573,64 @@ async function renderDatesPage({ source, breadcrumbParts, heading, routeKey, edi
   );
 }
 
-function renderCategory(catId) {
+// Fetches a year's own file (source.file), then hands off to renderDatesGrid.
+// Used for: a 3-level category's specific year, and a flat 2-level category (its own file IS the dates array).
+async function renderDatesPage({ source, breadcrumbParts, heading, routeKey, editContext }) {
+  document.title = `${heading} — ${DATA.siteName}`;
+
+  app.replaceChildren(
+    header(),
+    el("main", { class: "wrap" }, [
+      breadcrumb(breadcrumbParts),
+      el("div", { class: "section-head" }, [el("h2", {}, heading)]),
+      emptyState("Đang tải…"),
+    ]),
+    footer()
+  );
+
+  let dates;
+  try {
+    dates = await loadYearDates(source);
+  } catch (err) {
+    app.querySelector(".empty-state").textContent = `Không tải được dữ liệu: ${err.message}`;
+    return;
+  }
+
+  if (location.hash.replace(/^#\/?/, "") !== routeKey) return;
+
+  renderDatesGrid({ dates, breadcrumbParts, heading, editContext });
+}
+
+// Renders the year-cards grid for a 3-level-in-one-file category
+// (content already fetched via loadCategoryFile — no further requests needed).
+function renderYearGridFromFile(cat, years) {
+  document.title = `${cat.name} — ${DATA.siteName}`;
+  const grid = el("div", { class: "grid" });
+  years.forEach((yr) => {
+    grid.appendChild(
+      card({
+        href: `#/${cat.id}/${yr.id}`,
+        cover: yr.cover,
+        title: yr.name,
+        extraClass: "card-year",
+      })
+    );
+  });
+  app.replaceChildren(
+    header(),
+    el("main", { class: "wrap" }, [
+      breadcrumb([{ label: "Home", href: "#/" }, { label: cat.name }]),
+      el("div", { class: "section-head" }, [
+        el("h2", {}, cat.name),
+        el("span", { class: "section-count" }, `${years.length} total`),
+      ]),
+      years.length ? grid : emptyState("No years added yet — add one in this data file"),
+    ]),
+    footer()
+  );
+}
+
+async function renderCategory(catId) {
   const cat = DATA.categories.find((c) => c.id === catId);
   if (!cat) return renderNotFound();
 
@@ -563,35 +638,115 @@ function renderCategory(catId) {
     return renderCategoryYears(cat);
   }
 
-  if (cat.file) {
-    return renderDatesPage({
-      source: cat,
+  if (!cat.file) return renderNotFound();
+
+  document.title = `${cat.name} — ${DATA.siteName}`;
+  app.replaceChildren(
+    header(),
+    el("main", { class: "wrap" }, [
+      breadcrumb([{ label: "Home", href: "#/" }, { label: cat.name }]),
+      el("div", { class: "section-head" }, [el("h2", {}, cat.name)]),
+      emptyState("Đang tải…"),
+    ]),
+    footer()
+  );
+
+  let content;
+  try {
+    content = await loadCategoryFile(cat);
+  } catch (err) {
+    app.querySelector(".empty-state").textContent = `Không tải được dữ liệu: ${err.message}`;
+    return;
+  }
+
+  if (location.hash.replace(/^#\/?/, "") !== cat.id) return;
+
+  if (Array.isArray(content)) {
+    // Flat 2-level category (e.g. OTHERS): the file itself IS the array of leaf entries.
+    renderDatesGrid({
+      dates: content,
       breadcrumbParts: [{ label: "Home", href: "#/" }, { label: cat.name }],
       heading: cat.name,
-      routeKey: cat.id,
       editContext: { cat, yr: { name: cat.name, file: cat.file } },
+    });
+    return;
+  }
+
+  if (content && Array.isArray(content.years)) {
+    // Nested 3-level-in-one-file category (e.g. CONCERT, FANCAM).
+    renderYearGridFromFile(cat, content.years);
+    return;
+  }
+
+  renderNotFound();
+}
+
+async function renderYear(catId, yearId) {
+  const cat = DATA.categories.find((c) => c.id === catId);
+  if (!cat) return renderNotFound();
+
+  // 3-level category with per-year files (e.g. OFFSTAGE, EVENT)
+  if (cat.years) {
+    const yr = cat.years.find((y) => y.id === yearId);
+    if (!yr) return renderNotFound();
+    return renderDatesPage({
+      source: yr,
+      breadcrumbParts: [
+        { label: "Home", href: "#/" },
+        { label: cat.name, href: `#/${cat.id}` },
+        { label: yr.name },
+      ],
+      heading: `${cat.name} — ${yr.name}`,
+      routeKey: `${catId}/${yearId}`,
+      editContext: { cat, yr },
     });
   }
 
+  // 3-level-in-one-file category (e.g. CONCERT, FANCAM): the year lives inside
+  // the already-cached (or freshly fetched) category file — no extra request needed.
+  if (cat.file) {
+    document.title = `${cat.name} — ${DATA.siteName}`;
+    app.replaceChildren(
+      header(),
+      el("main", { class: "wrap" }, [
+        breadcrumb([
+          { label: "Home", href: "#/" },
+          { label: cat.name, href: `#/${cat.id}` },
+          { label: yearId },
+        ]),
+        el("div", { class: "section-head" }, [el("h2", {}, cat.name)]),
+        emptyState("Đang tải…"),
+      ]),
+      footer()
+    );
+
+    let content;
+    try {
+      content = await loadCategoryFile(cat);
+    } catch (err) {
+      app.querySelector(".empty-state").textContent = `Không tải được dữ liệu: ${err.message}`;
+      return;
+    }
+
+    if (location.hash.replace(/^#\/?/, "") !== `${catId}/${yearId}`) return;
+
+    const yr = content && Array.isArray(content.years) && content.years.find((y) => y.id === yearId);
+    if (!yr) return renderNotFound();
+
+    renderDatesGrid({
+      dates: yr.dates || [],
+      breadcrumbParts: [
+        { label: "Home", href: "#/" },
+        { label: cat.name, href: `#/${cat.id}` },
+        { label: yr.name },
+      ],
+      heading: `${cat.name} — ${yr.name}`,
+      editContext: { cat, yr: { id: yr.id, name: yr.name, file: cat.file, nestedYear: true } },
+    });
+    return;
+  }
+
   return renderNotFound();
-}
-
-function renderYear(catId, yearId) {
-  const cat = DATA.categories.find((c) => c.id === catId);
-  const yr = cat && cat.years && cat.years.find((y) => y.id === yearId);
-  if (!cat || !yr) return renderNotFound();
-
-  return renderDatesPage({
-    source: yr,
-    breadcrumbParts: [
-      { label: "Home", href: "#/" },
-      { label: cat.name, href: `#/${cat.id}` },
-      { label: yr.name },
-    ],
-    heading: `${cat.name} — ${yr.name}`,
-    routeKey: `${catId}/${yearId}`,
-    editContext: { cat, yr },
-  });
 }
 
 function renderNotFound() {
