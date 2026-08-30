@@ -2,7 +2,7 @@
    NYANG GARDEN — exhibition-style photo showroom for Yang Jungwon of ENHYPEN
    Design tokens live here. Change these to reskin the site.
    ========================================================= */
- 
+
 :root {
   --bg: #102D23; /* màu nền chính của cả trang */
   --bg-elevated: #183B2D; /* màu nền của thẻ card (nhạt hơn nền chính 1 chút) */
