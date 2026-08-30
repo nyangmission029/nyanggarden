@@ -72,6 +72,16 @@ function breadcrumb(parts) {
 
 const ICON_MENU = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>`;
 const ICON_SEARCH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`;
+const ICON_MAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 6.5l8 6.5 8-6.5"/></svg>`;
+const ICON_X = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.53 3H20.8l-7.14 8.16L22 21h-6.53l-5.12-6.7L4.5 21H1.23l7.64-8.73L2 3h6.7l4.63 6.13L17.53 3zm-1.14 16.17h1.8L7.7 4.73H5.76l10.63 14.44z"/></svg>`;
+const ICON_FACEBOOK = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-8.1h2.72l.41-3.15H13.5V7.75c0-.91.25-1.53 1.56-1.53h1.67V3.42C16.44 3.29 15.44 3.2 14.29 3.2c-2.4 0-4.04 1.46-4.04 4.15v2.4H7.5v3.15h2.75V21h3.25z"/></svg>`;
+
+// Fill in the actual links here — this is the only part you need to edit.
+const CONTACT_LINKS = {
+  email: "mailto:youremail@gmail.com",
+  x: "https://x.com/your_handle",
+  facebook: "https://facebook.com/your_page",
+};
 
 // Reusable icon buttons — used both on the hero (home page) and the plain
 // header (every other page), so Menu + Search work everywhere.
@@ -414,9 +424,17 @@ function header() {
 }
 
 function footer() {
+  const contactRow = el("div", { class: "footer-contact" }, [
+    el("a", { href: CONTACT_LINKS.email, class: "footer-icon-btn", "aria-label": "Email", target: "_blank", html: ICON_MAIL }),
+    el("a", { href: CONTACT_LINKS.x, class: "footer-icon-btn", "aria-label": "X", target: "_blank", rel: "noopener noreferrer", html: ICON_X }),
+    el("a", { href: CONTACT_LINKS.facebook, class: "footer-icon-btn", "aria-label": "Facebook", target: "_blank", rel: "noopener noreferrer", html: ICON_FACEBOOK }),
+  ]);
   return el("footer", { class: "site-footer" }, [
     divider(),
-    el("div", { class: "wrap" }, `© ${new Date().getFullYear()} — All images belong to their respective owners. No copyright infringement intended.`),
+    el("div", { class: "wrap site-footer-row" }, [
+      el("p", { class: "footer-copyright" }, `© ${new Date().getFullYear()} — All images belong to their respective owners. No copyright infringement intended.`),
+      contactRow,
+    ]),
   ]);
 }
 
