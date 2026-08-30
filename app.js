@@ -513,8 +513,11 @@ function renderHome() {
 // Renders the "3-level" category page: a grid of year cards.
 function renderCategoryYears(cat) {
   document.title = `${cat.name} — ${DATA.siteName}`;
+  const sortedYears = [...cat.years].sort((a, b) =>
+    String(a.id).localeCompare(String(b.id), undefined, { numeric: true })
+  );
   const grid = el("div", { class: "grid" });
-  cat.years.forEach((yr) => {
+  sortedYears.forEach((yr) => {
     grid.appendChild(
       card({
         href: `#/${cat.id}/${yr.id}`,
@@ -527,12 +530,12 @@ function renderCategoryYears(cat) {
   app.replaceChildren(
     header(),
     el("main", { class: "wrap" }, [
-      breadcrumb([{ label: "Home", href: "#/" }, { label: cat.name }]),
+      breadcrumb([{ label: "HOME", href: "#/" }, { label: cat.name }]),
       el("div", { class: "section-head" }, [
         el("h2", {}, cat.name),
-        el("span", { class: "section-count" }, `${cat.years.length} total`),
+        el("span", { class: "section-count" }, `${sortedYears.length} total`),
       ]),
-      cat.years.length ? grid : emptyState("No years added yet — add one in data.json"),
+      sortedYears.length ? grid : emptyState("No years added yet — add one in data.json"),
     ]),
     footer()
   );
@@ -542,8 +545,11 @@ function renderCategoryYears(cat) {
 // Shared by: fetch-then-render flows below, and any future synchronous case.
 function renderDatesGrid({ dates, breadcrumbParts, heading, editContext }) {
   document.title = `${heading} — ${DATA.siteName}`;
+  const sortedDates = [...dates].sort((a, b) =>
+    String(a.id).localeCompare(String(b.id), undefined, { numeric: true })
+  );
   const grid = el("div", { class: "grid" });
-  dates.forEach((d) => {
+  sortedDates.forEach((d) => {
     grid.appendChild(
       card({
         href: d.link,
@@ -565,9 +571,9 @@ function renderDatesGrid({ dates, breadcrumbParts, heading, editContext }) {
       breadcrumb(breadcrumbParts),
       el("div", { class: "section-head" }, [
         el("h2", {}, heading),
-        el("span", { class: "section-count" }, `${dates.length} total`),
+        el("span", { class: "section-count" }, `${sortedDates.length} total`),
       ]),
-      dates.length || isEditMode() ? grid : emptyState("No sets added yet — add one in this data file"),
+      sortedDates.length || isEditMode() ? grid : emptyState("No sets added yet — add one in this data file"),
     ]),
     footer()
   );
@@ -605,8 +611,11 @@ async function renderDatesPage({ source, breadcrumbParts, heading, routeKey, edi
 // (content already fetched via loadCategoryFile — no further requests needed).
 function renderYearGridFromFile(cat, years) {
   document.title = `${cat.name} — ${DATA.siteName}`;
+  const sortedYears = [...years].sort((a, b) =>
+    String(a.id).localeCompare(String(b.id), undefined, { numeric: true })
+  );
   const grid = el("div", { class: "grid" });
-  years.forEach((yr) => {
+  sortedYears.forEach((yr) => {
     grid.appendChild(
       card({
         href: `#/${cat.id}/${yr.id}`,
@@ -619,12 +628,12 @@ function renderYearGridFromFile(cat, years) {
   app.replaceChildren(
     header(),
     el("main", { class: "wrap" }, [
-      breadcrumb([{ label: "Home", href: "#/" }, { label: cat.name }]),
+      breadcrumb([{ label: "HOME", href: "#/" }, { label: cat.name }]),
       el("div", { class: "section-head" }, [
         el("h2", {}, cat.name),
-        el("span", { class: "section-count" }, `${years.length} total`),
+        el("span", { class: "section-count" }, `${sortedYears.length} total`),
       ]),
-      years.length ? grid : emptyState("No years added yet — add one in this data file"),
+      sortedYears.length ? grid : emptyState("No years added yet — add one in this data file"),
     ]),
     footer()
   );
@@ -644,7 +653,7 @@ async function renderCategory(catId) {
   app.replaceChildren(
     header(),
     el("main", { class: "wrap" }, [
-      breadcrumb([{ label: "Home", href: "#/" }, { label: cat.name }]),
+      breadcrumb([{ label: "HOME", href: "#/" }, { label: cat.name }]),
       el("div", { class: "section-head" }, [el("h2", {}, cat.name)]),
       emptyState("Đang tải…"),
     ]),
@@ -665,7 +674,7 @@ async function renderCategory(catId) {
     // Flat 2-level category (e.g. OTHERS): the file itself IS the array of leaf entries.
     renderDatesGrid({
       dates: content,
-      breadcrumbParts: [{ label: "Home", href: "#/" }, { label: cat.name }],
+      breadcrumbParts: [{ label: "HOME", href: "#/" }, { label: cat.name }],
       heading: cat.name,
       editContext: { cat, yr: { name: cat.name, file: cat.file } },
     });
@@ -692,7 +701,7 @@ async function renderYear(catId, yearId) {
     return renderDatesPage({
       source: yr,
       breadcrumbParts: [
-        { label: "Home", href: "#/" },
+        { label: "HOME", href: "#/" },
         { label: cat.name, href: `#/${cat.id}` },
         { label: yr.name },
       ],
@@ -710,7 +719,7 @@ async function renderYear(catId, yearId) {
       header(),
       el("main", { class: "wrap" }, [
         breadcrumb([
-          { label: "Home", href: "#/" },
+          { label: "HOME", href: "#/" },
           { label: cat.name, href: `#/${cat.id}` },
           { label: yearId },
         ]),
@@ -753,7 +762,7 @@ function renderNotFound() {
   app.replaceChildren(
     header(),
     el("main", { class: "wrap" }, [
-      breadcrumb([{ label: "Home", href: "#/" }, { label: "Not found" }]),
+      breadcrumb([{ label: "HOME", href: "#/" }, { label: "Not found" }]),
       emptyState("That page doesn't exist."),
     ]),
     footer()
