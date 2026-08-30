@@ -73,10 +73,21 @@ function breadcrumb(parts) {
 const ICON_MENU = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>`;
 const ICON_SEARCH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`;
 
+// Reusable icon buttons — used both on the hero (home page) and the plain
+// header (every other page), so Menu + Search work everywhere.
+function makeMenuButton(btnClass) {
+  const btn = el("button", { class: btnClass, "aria-label": "Menu", html: ICON_MENU });
+  btn.addEventListener("click", openMenuModal);
+  return btn;
+}
+function makeSearchButton(btnClass) {
+  const btn = el("button", { class: btnClass, "aria-label": "Search", html: ICON_SEARCH });
+  btn.addEventListener("click", openSearchModal);
+  return btn;
+}
+
 function heroBanner() {
   const hero = DATA.hero || {};
-  const searchBtn = el("button", { class: "hero-icon-btn", "aria-label": "Tìm kiếm", html: ICON_SEARCH });
-  searchBtn.addEventListener("click", openSearchModal);
   return el("div", { class: "hero" }, [
     hero.image ? (() => {
       const img = el("img", { class: "hero-img", src: hero.image, alt: hero.title || DATA.siteName, loading: "eager" });
@@ -84,8 +95,8 @@ function heroBanner() {
       return img;
     })() : null,
     el("div", { class: "hero-topbar" }, [
-      el("button", { class: "hero-icon-btn", "aria-label": "Menu", html: ICON_MENU }),
-      searchBtn,
+      makeMenuButton("hero-icon-btn"),
+      makeSearchButton("hero-icon-btn"),
     ]),
     el("div", { class: "hero-body" }, [
       el("h1", { class: "hero-title" }, hero.title || DATA.siteName),
@@ -101,7 +112,45 @@ function divider() {
   return el("div", { class: "divider", "aria-hidden": "true" }, DIVIDER_TEXT);
 }
 
-/* ---------- Search (home page hero search icon) ----------
+/* ---------- Menu (list of categories, opens from any page) ---------- */
+
+function openMenuModal() {
+  const closeBtn = el("button", { type: "button", class: "modal-close", "aria-label": "Close" }, "×");
+  const list = el("nav", { class: "menu-list" });
+
+  function close() {
+    document.body.removeChild(backdrop);
+    document.removeEventListener("keydown", onKeyDown);
+  }
+  function onKeyDown(e) {
+    if (e.key === "Escape") close();
+  }
+
+  const homeLink = el("a", { href: "#/", class: "menu-list-item" }, "Home");
+  homeLink.addEventListener("click", close);
+  list.appendChild(homeLink);
+
+  DATA.categories.forEach((cat) => {
+    const link = el("a", { href: `#/${cat.id}`, class: "menu-list-item" }, cat.name);
+    link.addEventListener("click", close);
+    list.appendChild(link);
+  });
+
+  const modalBox = el("div", { class: "modal-box menu-modal-box" }, [
+    closeBtn,
+    el("h3", { class: "modal-title" }, "Menu"),
+    list,
+  ]);
+  const backdrop = el("div", { class: "modal-backdrop" }, [modalBox]);
+
+  backdrop.addEventListener("click", (e) => { if (e.target === backdrop) close(); });
+  closeBtn.addEventListener("click", close);
+  document.addEventListener("keydown", onKeyDown);
+
+  document.body.appendChild(backdrop);
+}
+
+/* ---------- Search (works from any page) ----------
    Works across BOTH category shapes: 3-level (category -> years -> dates)
    and 2-level (category -> dates directly via category.file). ---------- */
 
@@ -217,7 +266,7 @@ function openSearchModal() {
 /* ---------- Edit mode + inline "add date card" ---------- */
 
 const CLOUD_NAME = "jz2djjuo";
-const UPLOAD_PRESET = "nyangmission029";
+const UPLOAD_PRESET = "nyangmi";
 const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
 const EDIT_SECRET = "nyangmi";
 
@@ -330,8 +379,6 @@ function openAddCardModal(cat, yr) {
   });
 
   const closeBtn = el("button", { type: "button", class: "modal-close", "aria-label": "Đóng" }, "×");
-  // Skip the " / year" part of the title when this is a 2-level category
-  // (cat and yr share the same name in that case).
   const titleText = cat.name === yr.name ? `Thêm mới — ${cat.name}` : `Thêm ngày mới — ${cat.name} / ${yr.name}`;
   const modalBox = el("div", { class: "modal-box" }, [
     closeBtn,
@@ -352,9 +399,15 @@ function openAddCardModal(cat, yr) {
 
 function header() {
   return el("header", { class: "site-header" }, [
-    el("div", { class: "wrap" }, [
-      el("h1", { class: "site-title" }, [el("a", { href: "#/" }, DATA.siteName)]),
-      el("p", { class: "site-subtitle" }, DATA.siteSubtitle || ""),
+    el("div", { class: "wrap site-header-row" }, [
+      el("div", { class: "site-header-text" }, [
+        el("h1", { class: "site-title" }, [el("a", { href: "#/" }, DATA.siteName)]),
+        el("p", { class: "site-subtitle" }, DATA.siteSubtitle || ""),
+      ]),
+      el("div", { class: "site-header-icons" }, [
+        makeMenuButton("header-icon-btn"),
+        makeSearchButton("header-icon-btn"),
+      ]),
     ]),
     divider(),
   ]);
@@ -451,7 +504,6 @@ async function renderDatesPage({ source, breadcrumbParts, heading, routeKey, edi
     return;
   }
 
-  // Bail if the user navigated elsewhere while this was loading.
   if (location.hash.replace(/^#\/?/, "") !== routeKey) return;
 
   const grid = el("div", { class: "grid" });
