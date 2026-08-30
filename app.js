@@ -388,7 +388,7 @@ function renderHome() {
         el("h2", {}, "Collections"),
         el("span", { class: "section-count" }, `${DATA.categories.length} total`),
       ]),
-      DATA.categories.length ? grid : emptyState("No collections yet — add one in data.json"),
+      DATA.categories.length ? grid : emptyState("No values yet — add one in data.json"),
     ]),
     footer()
   );
@@ -412,7 +412,7 @@ function renderCategory(catId) {
   app.replaceChildren(
     header(),
     el("main", { class: "wrap" }, [
-      breadcrumb([{ label: "Exhibition", href: "#/" }, { label: cat.name }]),
+      breadcrumb([{ label: "Home", href: "#/" }, { label: cat.name }]),
       el("div", { class: "section-head" }, [
         el("h2", {}, cat.name),
         el("span", { class: "section-count" }, `${cat.years.length} total`),
@@ -435,7 +435,7 @@ async function renderYear(catId, yearId) {
     header(),
     el("main", { class: "wrap" }, [
       breadcrumb([
-        { label: "Exhibition", href: "#/" },
+        { label: "Home", href: "#/" },
         { label: cat.name, href: `#/${cat.id}` },
         { label: yr.name },
       ]),
@@ -477,7 +477,7 @@ async function renderYear(catId, yearId) {
     header(),
     el("main", { class: "wrap" }, [
       breadcrumb([
-        { label: "Exhibition", href: "#/" },
+        { label: "Home", href: "#/" },
         { label: cat.name, href: `#/${cat.id}` },
         { label: yr.name },
       ]),
@@ -495,7 +495,7 @@ function renderNotFound() {
   app.replaceChildren(
     header(),
     el("main", { class: "wrap" }, [
-      breadcrumb([{ label: "Exhibition", href: "#/" }, { label: "Not found" }]),
+      breadcrumb([{ label: "Home", href: "#/" }, { label: "Not found" }]),
       emptyState("That page doesn't exist."),
     ]),
     footer()
