@@ -48,7 +48,7 @@
           "cover": "images/covers/airport-2026-cover.jpg",
           "file": "data/offstage-2026.json"
         },
-                {
+        {
           "id": "2027",
           "name": "2027",
           "cover": "images/covers/airport-2027-cover.jpg",
@@ -65,7 +65,7 @@
           "id": "2020-2021",
           "name": "2020-2021",
           "cover": "https://res.cloudinary.com/jz2djjuo/image/upload/v1788056061/ygazbrsteki2mrsvabnr.jpg",
-          "file": "data/event-2022-2021.json"
+          "file": "data/event-2020-2021.json"
         },
         {
           "id": "2022",
@@ -105,27 +105,23 @@
         }
       ]
     },
-  {  "id": "concert",
-  "name": "CONCERT",
-  "cover": "images/covers/concert-cover.jpg",
-  "file": "data/concert.json"
-  },
     {
-  "id": "others",
-  "name": "OTHERS",
-  "cover": "images/covers/others-cover.jpg",
-  "file": "data/others.json"
-  }
-  {  "id": "fancam",
-  "name": "FANCAM",
-  "cover": "images/covers/fancam-cover.jpg",
-  "file": "data/fancam.json"
-  },
-  {
-  "id": "others",
-  "name": "OTHERS",
-  "cover": "images/covers/others-cover.jpg",
-  "file": "data/others.json"
-  }
+      "id": "concert",
+      "name": "CONCERT",
+      "cover": "images/covers/concert-cover.jpg",
+      "file": "data/concert.json"
+    },
+    {
+      "id": "others",
+      "name": "OTHERS",
+      "cover": "images/covers/others-cover.jpg",
+      "file": "data/others.json"
+    },
+    {
+      "id": "fancam",
+      "name": "FANCAM",
+      "cover": "images/covers/fancam-cover.jpg",
+      "file": "data/fancam.json"
+    }
   ]
 }
