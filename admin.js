@@ -1,55 +1,55 @@
 /* =========================================================
    NYANG GARDEN — Admin uploader
    Chọn ảnh từ máy -> upload lên Cloudinary (miễn phí) -> nhận link
-   để dán vào data.json. Web tĩnh không có server nên bắt buộc
-   phải dùng 1 dịch vụ lưu trữ ảnh bên ngoài (Cloudinary).
- 
+   để dán vào file dữ liệu tương ứng. Web tĩnh không có server nên
+   bắt buộc phải dùng 1 dịch vụ lưu trữ ảnh bên ngoài (Cloudinary).
+
    BẮT BUỘC ĐIỀN 2 DÒNG DƯỚI ĐÂY trước khi dùng
    (xem hướng dẫn lấy giá trị trong README-admin.md):
    ========================================================= */
 const CLOUD_NAME = "jz2djjuo";       // ví dụ: "dabc123xy"
 const UPLOAD_PRESET = "nyangmission029"; // ví dụ: "nyang_garden_uploads"
- 
+
 /* ========================================================= */
- 
+
 const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
- 
+
 const fileInput = document.getElementById("fileInput");
 const pickBtn = document.getElementById("pickBtn");
 const dropZone = document.getElementById("dropZone");
 const results = document.getElementById("results");
 const configWarning = document.getElementById("configWarning");
- 
+
 if (CLOUD_NAME === "YOUR_CLOUD_NAME" || UPLOAD_PRESET === "YOUR_UPLOAD_PRESET") {
   configWarning.hidden = false;
 }
- 
+
 pickBtn.addEventListener("click", () => fileInput.click());
- 
+
 fileInput.addEventListener("change", (e) => {
   handleFiles(e.target.files);
   fileInput.value = ""; // allow picking the same file again
 });
- 
+
 ["dragenter", "dragover"].forEach((evt) =>
   dropZone.addEventListener(evt, (e) => {
     e.preventDefault();
     dropZone.classList.add("is-dragover");
   })
 );
- 
+
 ["dragleave", "drop"].forEach((evt) =>
   dropZone.addEventListener(evt, (e) => {
     e.preventDefault();
     dropZone.classList.remove("is-dragover");
   })
 );
- 
+
 dropZone.addEventListener("drop", (e) => {
   const files = e.dataTransfer.files;
   if (files && files.length) handleFiles(files);
 });
- 
+
 function handleFiles(fileList) {
   if (CLOUD_NAME === "YOUR_CLOUD_NAME" || UPLOAD_PRESET === "YOUR_UPLOAD_PRESET") {
     configWarning.hidden = false;
@@ -61,13 +61,13 @@ function handleFiles(fileList) {
     uploadFile(file);
   });
 }
- 
+
 function uploadFile(file) {
   const item = createResultItem(file);
   const formData = new FormData();
   formData.append("file", file);
   formData.append("upload_preset", UPLOAD_PRESET);
- 
+
   fetch(UPLOAD_URL, { method: "POST", body: formData })
     .then((res) => {
       if (!res.ok) throw new Error(`Upload thất bại (mã lỗi ${res.status})`);
@@ -76,49 +76,49 @@ function uploadFile(file) {
     .then((data) => markSuccess(item, data.secure_url))
     .catch((err) => markError(item, err.message));
 }
- 
+
 function createResultItem(file) {
   const wrap = document.createElement("div");
   wrap.className = "result-item is-pending";
- 
+
   const thumb = document.createElement("img");
   thumb.className = "result-thumb";
   thumb.src = URL.createObjectURL(file);
   thumb.alt = file.name;
- 
+
   const body = document.createElement("div");
   body.className = "result-body";
- 
+
   const filename = document.createElement("p");
   filename.className = "result-filename";
   filename.textContent = file.name;
- 
+
   const status = document.createElement("p");
   status.className = "result-status";
   status.textContent = "Đang tải lên…";
- 
+
   body.appendChild(filename);
   body.appendChild(status);
   wrap.appendChild(thumb);
   wrap.appendChild(body);
   results.prepend(wrap);
- 
+
   return { wrap, status, body };
 }
- 
+
 function markSuccess(item, url) {
   item.wrap.classList.remove("is-pending");
-  item.status.textContent = "✓ Xong — copy link bên dưới và dán vào data.json";
- 
+  item.status.textContent = "✓ Xong — copy link bên dưới và dán vào file dữ liệu tương ứng";
+
   const row = document.createElement("div");
   row.className = "result-url-row";
- 
+
   const input = document.createElement("input");
   input.className = "result-url-input";
   input.type = "text";
   input.readOnly = true;
   input.value = url;
- 
+
   const copyBtn = document.createElement("button");
   copyBtn.className = "copy-btn";
   copyBtn.type = "button";
@@ -133,21 +133,25 @@ function markSuccess(item, url) {
       }, 1500);
     });
   });
- 
+
   row.appendChild(input);
   row.appendChild(copyBtn);
   item.body.appendChild(row);
 }
- 
+
 function markError(item, message) {
   item.wrap.classList.remove("is-pending");
   item.wrap.classList.add("is-error");
   item.status.classList.add("is-error");
   item.status.textContent = `✗ Lỗi: ${message}`;
 }
- 
-/* ---------- Card creator (new date card form) ---------- */
- 
+
+/* ---------- Card creator (new date card form) ----------
+   Supports both category shapes:
+   - 3-level: category has "years" -> pick a year, target file = year.file
+   - 2-level: category has "file" directly -> no year to pick, target file = category.file
+   ---------- */
+
 const ccCategory = document.getElementById("ccCategory");
 const ccYear = document.getElementById("ccYear");
 const ccName = document.getElementById("ccName");
@@ -164,11 +168,11 @@ const ccOutput = document.getElementById("ccOutput");
 const ccOutputHint = document.getElementById("ccOutputHint");
 const ccOutputJson = document.getElementById("ccOutputJson");
 const ccCopyBtn = document.getElementById("ccCopyBtn");
- 
+
 let ccData = null;
 let ccCoverUrl = "";
 let ccUploading = false;
- 
+
 fetch("data.json", { cache: "no-store" })
   .then((res) => res.json())
   .then((data) => {
@@ -184,7 +188,7 @@ fetch("data.json", { cache: "no-store" })
   .catch(() => {
     ccCategory.innerHTML = '<option value="">Không tải được data.json</option>';
   });
- 
+
 ccCategory.addEventListener("change", () => {
   const cat = ccData && ccData.categories.find((c) => c.id === ccCategory.value);
   if (!cat) {
@@ -192,23 +196,30 @@ ccCategory.addEventListener("change", () => {
     ccYear.disabled = true;
     return;
   }
-  ccYear.disabled = false;
-  ccYear.innerHTML = '<option value="">— Chọn năm —</option>';
-  cat.years.forEach((yr) => {
-    const opt = document.createElement("option");
-    opt.value = yr.id;
-    opt.textContent = yr.name;
-    ccYear.appendChild(opt);
-  });
+  if (cat.years) {
+    // 3-level category: let the user pick a year
+    ccYear.disabled = false;
+    ccYear.innerHTML = '<option value="">— Chọn năm —</option>';
+    cat.years.forEach((yr) => {
+      const opt = document.createElement("option");
+      opt.value = yr.id;
+      opt.textContent = yr.name;
+      ccYear.appendChild(opt);
+    });
+  } else {
+    // 2-level category: no year to pick, cards go straight into cat.file
+    ccYear.innerHTML = '<option value="__self__">— Mục này không có năm, bấm Tạo card luôn —</option>';
+    ccYear.disabled = true;
+  }
 });
- 
+
 ccPickBtn.addEventListener("click", () => ccFileInput.click());
- 
+
 ccFileInput.addEventListener("change", (e) => {
   if (e.target.files && e.target.files[0]) ccHandleFile(e.target.files[0]);
   ccFileInput.value = "";
 });
- 
+
 ["dragenter", "dragover"].forEach((evt) =>
   ccDropZone.addEventListener(evt, (e) => {
     e.preventDefault();
@@ -225,7 +236,7 @@ ccDropZone.addEventListener("drop", (e) => {
   const file = e.dataTransfer.files && e.dataTransfer.files[0];
   if (file) ccHandleFile(file);
 });
- 
+
 function ccHandleFile(file) {
   if (!file.type.startsWith("image/")) return;
   if (CLOUD_NAME === "YOUR_CLOUD_NAME" || UPLOAD_PRESET === "YOUR_UPLOAD_PRESET") {
@@ -240,11 +251,11 @@ function ccHandleFile(file) {
   ccUploadStatus.textContent = "Đang tải ảnh lên…";
   ccUploading = true;
   ccCoverUrl = "";
- 
+
   const formData = new FormData();
   formData.append("file", file);
   formData.append("upload_preset", UPLOAD_PRESET);
- 
+
   fetch(UPLOAD_URL, { method: "POST", body: formData })
     .then((res) => {
       if (!res.ok) throw new Error(`mã lỗi ${res.status}`);
@@ -261,7 +272,7 @@ function ccHandleFile(file) {
       ccUploading = false;
     });
 }
- 
+
 function ccSlugify(text) {
   return text
     .toLowerCase()
@@ -271,7 +282,7 @@ function ccSlugify(text) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/(^-|-$)/g, "");
 }
- 
+
 function ccMakeId(name) {
   const m = name.trim().match(/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/);
   if (m) {
@@ -281,18 +292,33 @@ function ccMakeId(name) {
   const slug = ccSlugify(name);
   return slug || `card-${Date.now()}`;
 }
- 
+
 ccGenerateBtn.addEventListener("click", () => {
   const catId = ccCategory.value;
-  const yearId = ccYear.value;
   const cat = ccData && ccData.categories.find((c) => c.id === catId);
-  const yr = cat && cat.years.find((y) => y.id === yearId);
-  const name = ccName.value.trim();
- 
-  if (!cat || !yr) {
-    alert("Chọn danh mục và năm trước đã.");
+
+  if (!cat) {
+    alert("Chọn danh mục trước đã.");
     return;
   }
+
+  // Resolve the target "year-like" object depending on category shape.
+  let yr;
+  let targetLabel;
+  if (cat.years) {
+    const yearId = ccYear.value;
+    yr = cat.years.find((y) => y.id === yearId);
+    if (!yr) {
+      alert("Chọn năm trước đã.");
+      return;
+    }
+    targetLabel = `"${cat.name}" → "${yr.name}"`;
+  } else {
+    yr = { name: cat.name, file: cat.file };
+    targetLabel = `"${cat.name}"`;
+  }
+
+  const name = ccName.value.trim();
   if (!name) {
     alert("Điền tên hiển thị cho card (VD: 21.08.2024).");
     return;
@@ -301,7 +327,7 @@ ccGenerateBtn.addEventListener("click", () => {
     alert("Ảnh bìa đang tải lên, đợi 1-2 giây rồi bấm lại nhé.");
     return;
   }
- 
+
   const entry = {
     id: ccMakeId(name),
     name: name,
@@ -309,19 +335,19 @@ ccGenerateBtn.addEventListener("click", () => {
     cover: ccCoverUrl || "images/covers/REPLACE_ME.jpg",
     link: ccLink.value.trim() || "https://mega.nz/folder/YOUR_LINK_HERE",
   };
- 
-  const ccFileName = yr.file || "(chưa có file cho năm này — tạo file mới trong thư mục data/)";
-  ccOutputHint.textContent = `Dán đoạn dưới vào MẢNG trong file "${ccFileName}" (không phải data.json):`;
+
+  const ccFileName = yr.file || "(chưa có file cho mục này — tạo file mới trong thư mục data/)";
+  ccOutputHint.textContent = `Dán đoạn dưới vào MẢNG trong file "${ccFileName}" (mục ${targetLabel}, không phải data.json):`;
   ccOutputJson.value = JSON.stringify(entry, null, 2) + ",";
   ccOutput.hidden = false;
   ccOutput.scrollIntoView({ behavior: "smooth", block: "center" });
- 
+
   if (!ccCoverUrl) {
     ccUploadStatus.classList.add("is-error");
     ccUploadStatus.textContent = "⚠️ Chưa có ảnh bìa — nhớ tự điền lại đường dẫn cover trong JSON.";
   }
 });
- 
+
 ccCopyBtn.addEventListener("click", () => {
   navigator.clipboard.writeText(ccOutputJson.value).then(() => {
     ccCopyBtn.textContent = "Đã copy!";
