@@ -4,16 +4,19 @@
       "id": "given-taken",
       "name": "Given-Taken",
       "cover": "images/covers/given-taken-cover.jpg",
+      "date": []
     },
     {
       "id": "let-me-in",
       "name": "Let Me In",
       "cover": "images/covers/let-me-in-cover.jpg",
+      "date": []
     },
     {
       "id": "10-months",
       "name": "10 Months",
       "cover": "images/covers/10-months-cover.jpg",
+      "date": []
     },
   ]
 }
