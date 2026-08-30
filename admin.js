@@ -147,9 +147,11 @@ function markError(item, message) {
 }
 
 /* ---------- Card creator (new date card form) ----------
-   Supports both category shapes:
-   - 3-level: category has "years" -> pick a year, target file = year.file
-   - 2-level: category has "file" directly -> no year to pick, target file = category.file
+   Supports THREE category shapes:
+   - 3-level, per-year files: category has "years" (each year has its own "file")
+   - 2-level, flat file: category has "file" directly, and that file is a plain array
+   - 3-level, one shared file: category has "file" directly, but that file is
+     { years: [{ id, name, cover, dates: [...] }] } — years live inside it
    ---------- */
 
 const ccCategory = document.getElementById("ccCategory");
@@ -172,6 +174,7 @@ const ccCopyBtn = document.getElementById("ccCopyBtn");
 let ccData = null;
 let ccCoverUrl = "";
 let ccUploading = false;
+let ccYearMode = ""; // "years-inline" | "flat-file" | "nested-file"
 
 fetch("data.json", { cache: "no-store" })
   .then((res) => res.json())
@@ -189,15 +192,19 @@ fetch("data.json", { cache: "no-store" })
     ccCategory.innerHTML = '<option value="">Không tải được data.json</option>';
   });
 
-ccCategory.addEventListener("change", () => {
+ccCategory.addEventListener("change", async () => {
   const cat = ccData && ccData.categories.find((c) => c.id === ccCategory.value);
+  ccYearMode = "";
+
   if (!cat) {
     ccYear.innerHTML = '<option value="">— Chọn danh mục trước —</option>';
     ccYear.disabled = true;
     return;
   }
+
   if (cat.years) {
-    // 3-level category: let the user pick a year
+    // 3-level, per-year files: let the user pick a year straight from data.json
+    ccYearMode = "years-inline";
     ccYear.disabled = false;
     ccYear.innerHTML = '<option value="">— Chọn năm —</option>';
     cat.years.forEach((yr) => {
@@ -206,10 +213,38 @@ ccCategory.addEventListener("change", () => {
       opt.textContent = yr.name;
       ccYear.appendChild(opt);
     });
-  } else {
-    // 2-level category: no year to pick, cards go straight into cat.file
-    ccYear.innerHTML = '<option value="__self__">— Mục này không có năm, bấm Tạo card luôn —</option>';
+    return;
+  }
+
+  if (cat.file) {
+    // Could be a flat file OR a nested { years: [...] } file — have to fetch it to know.
     ccYear.disabled = true;
+    ccYear.innerHTML = '<option value="">— Đang kiểm tra file... —</option>';
+    try {
+      const res = await fetch(cat.file, { cache: "no-store" });
+      if (!res.ok) throw new Error(`mã lỗi ${res.status}`);
+      const content = await res.json();
+
+      if (Array.isArray(content)) {
+        ccYearMode = "flat-file";
+        ccYear.innerHTML = '<option value="__self__">— Mục này không có năm, bấm Tạo card luôn —</option>';
+        ccYear.disabled = true;
+      } else if (content && Array.isArray(content.years)) {
+        ccYearMode = "nested-file";
+        ccYear.disabled = false;
+        ccYear.innerHTML = '<option value="">— Chọn năm —</option>';
+        content.years.forEach((yr) => {
+          const opt = document.createElement("option");
+          opt.value = yr.id;
+          opt.textContent = yr.name;
+          ccYear.appendChild(opt);
+        });
+      } else {
+        ccYear.innerHTML = '<option value="">Không nhận diện được cấu trúc file</option>';
+      }
+    } catch (err) {
+      ccYear.innerHTML = '<option value="">Không tải được file dữ liệu</option>';
+    }
   }
 });
 
@@ -305,7 +340,9 @@ ccGenerateBtn.addEventListener("click", () => {
   // Resolve the target "year-like" object depending on category shape.
   let yr;
   let targetLabel;
-  if (cat.years) {
+  let nestedYear = false;
+
+  if (ccYearMode === "years-inline") {
     const yearId = ccYear.value;
     yr = cat.years.find((y) => y.id === yearId);
     if (!yr) {
@@ -313,9 +350,22 @@ ccGenerateBtn.addEventListener("click", () => {
       return;
     }
     targetLabel = `"${cat.name}" → "${yr.name}"`;
-  } else {
+  } else if (ccYearMode === "nested-file") {
+    const yearId = ccYear.value;
+    if (!yearId) {
+      alert("Chọn năm trước đã.");
+      return;
+    }
+    const selectedOption = ccYear.options[ccYear.selectedIndex];
+    yr = { id: yearId, name: selectedOption ? selectedOption.textContent : yearId, file: cat.file };
+    nestedYear = true;
+    targetLabel = `"${cat.name}" → "${yr.name}"`;
+  } else if (ccYearMode === "flat-file") {
     yr = { name: cat.name, file: cat.file };
     targetLabel = `"${cat.name}"`;
+  } else {
+    alert("Chọn danh mục (và năm, nếu có) trước đã.");
+    return;
   }
 
   const name = ccName.value.trim();
@@ -337,7 +387,10 @@ ccGenerateBtn.addEventListener("click", () => {
   };
 
   const ccFileName = yr.file || "(chưa có file cho mục này — tạo file mới trong thư mục data/)";
-  ccOutputHint.textContent = `Dán đoạn dưới vào MẢNG trong file "${ccFileName}" (mục ${targetLabel}, không phải data.json):`;
+  const hintLocation = nestedYear
+    ? `mảng "dates" của năm "${yr.name}" bên trong file "${ccFileName}"`
+    : `MẢNG trong file "${ccFileName}"`;
+  ccOutputHint.textContent = `Dán đoạn dưới vào ${hintLocation} (mục ${targetLabel}, không phải data.json):`;
   ccOutputJson.value = JSON.stringify(entry, null, 2) + ",";
   ccOutput.hidden = false;
   ccOutput.scrollIntoView({ behavior: "smooth", block: "center" });
