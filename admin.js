@@ -8,7 +8,7 @@
    (xem hướng dẫn lấy giá trị trong README-admin.md):
    ========================================================= */
 const CLOUD_NAME = "jz2djjuo";       // ví dụ: "dabc123xy"
-const UPLOAD_PRESET = "nyangmission029"; // ví dụ: "nyang_garden_uploads"
+const UPLOAD_PRESET = "nyangmi"; // ví dụ: "nyang_garden_uploads"
 
 /* ========================================================= */
 
