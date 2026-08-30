@@ -105,21 +105,27 @@
         }
       ]
     },
+  {  "id": "concert",
+  "name": "CONCERT",
+  "cover": "images/covers/concert-cover.jpg",
+  "file": "data/concert.json"
+  },
     {
   "id": "others",
   "name": "OTHERS",
   "cover": "images/covers/others-cover.jpg",
   "file": "data/others.json"
-  },
+  }
   {  "id": "fancam",
   "name": "FANCAM",
   "cover": "images/covers/fancam-cover.jpg",
   "file": "data/fancam.json"
   },
-   {  "id": "concert",
-  "name": "CONCERT",
-  "cover": "images/covers/concert-cover.jpg",
-  "file": "data/concert.json"
+  {
+  "id": "others",
+  "name": "OTHERS",
+  "cover": "images/covers/others-cover.jpg",
+  "file": "data/others.json"
   }
   ]
 }
