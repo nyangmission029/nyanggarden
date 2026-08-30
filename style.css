@@ -167,6 +167,42 @@ header.site-header {
   text-transform: uppercase;
   font-family: var(--font-subtitle);
 }
+
+/* Row that holds the title block + Menu/Search icons on non-home pages */
+.site-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.site-header-icons {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.header-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.header-icon-btn svg { width: 20px; height: 20px; }
+
+.header-icon-btn:hover,
+.header-icon-btn:focus-visible {
+  color: var(--accent-bright);
+}
  
 /* ---------- Breadcrumb / floor signage ---------- */
  
@@ -594,4 +630,32 @@ footer.site-footer {
 
 @media (max-width: 560px) {
   .search-modal-box { padding: 22px; }
+}
+
+/* ---------- Menu modal ---------- */
+
+.menu-modal-box {
+  max-width: 380px;
+}
+
+.menu-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: 4px;
+}
+
+.menu-list-item {
+  padding: 14px 4px;
+  font-family: var(--font-body);
+  font-size: 18px;
+  color: var(--text);
+  border-bottom: 1px solid var(--line);
+  transition: color 0.2s ease;
+}
+
+.menu-list-item:last-child { border-bottom: none; }
+
+.menu-list-item:hover,
+.menu-list-item:focus-visible {
+  color: var(--accent-bright);
 }
