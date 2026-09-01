@@ -313,7 +313,7 @@ function openSearchModal() {
 /* ---------- Edit mode + inline "add date card" ---------- */
 
 const CLOUD_NAME = "jz2djjuo";
-const UPLOAD_PRESET = "nyangmi";
+const UPLOAD_PRESET = "nyangmission029";
 const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
 const EDIT_SECRET = "nyangmi";
 
