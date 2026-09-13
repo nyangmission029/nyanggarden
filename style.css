@@ -20,16 +20,13 @@
   --gap: 28px;
   --max-width: 1240px;
 
-  /* Ảnh khung hoa văn — thay từng link bằng link Cloudinary thật sau khi upload
-     qua admin.html (mục "Upload ảnh lẻ"). Để trống ("") sẽ không hiện khung đó.
-     LƯU Ý: ảnh khung được PHỦ NGUYÊN VẸN lên card (không cắt/không lặp), nên
-     bạn nên chuẩn bị đúng tỉ lệ khung khớp với từng loại card để không bị méo:
+  /* Ảnh khung hoa văn 
      - category: card ngang 16:9 (OFFSTAGE/AIRPORT, EVENT, CONCERT...)
      - year:     card vuông 1:1 (các năm bên trong 1 danh mục)
      - date:     card dọc 2:3 (từng bộ ảnh/ngày cụ thể) */
   --frame-image-category: url("REPLACE_WITH_CATEGORY_FRAME_URL");
   --frame-image-year: url("REPLACE_WITH_YEAR_FRAME_URL");
-  --frame-image-date: url("https://res.cloudinary.com/jz2djjuo/image/upload/v1789329945/jwz1chgzulgp2nerbp14.png");
+  --frame-image-date: url("https://res.cloudinary.com/jz2djjuo/image/upload/v1789330195/w4kevpegel5ppti1ktnu.png");
 }
  
 * { box-sizing: border-box; }
