@@ -22,14 +22,14 @@
 
   /* Ảnh khung hoa văn — thay từng link bằng link Cloudinary thật sau khi upload
      qua admin.html (mục "Upload ảnh lẻ"). Để trống ("") sẽ không hiện khung đó.
-     Mỗi loại card có tỉ lệ khác nhau nên dùng ảnh khung riêng cho từng loại:
+     LƯU Ý: ảnh khung được PHỦ NGUYÊN VẸN lên card (không cắt/không lặp), nên
+     bạn nên chuẩn bị đúng tỉ lệ khung khớp với từng loại card để không bị méo:
      - category: card ngang 16:9 (OFFSTAGE/AIRPORT, EVENT, CONCERT...)
      - year:     card vuông 1:1 (các năm bên trong 1 danh mục)
      - date:     card dọc 2:3 (từng bộ ảnh/ngày cụ thể) */
   --frame-image-category: url("REPLACE_WITH_CATEGORY_FRAME_URL");
   --frame-image-year: url("REPLACE_WITH_YEAR_FRAME_URL");
   --frame-image-date: url("https://res.cloudinary.com/jz2djjuo/image/upload/v1789328152/f3rpqhmcjqadx0smjjuk.png");
-  --frame-border-width: 36px; /* độ dày dải khung quanh ảnh — chỉnh số này để dày/mỏng hơn */
 }
  
 * { box-sizing: border-box; }
@@ -287,6 +287,7 @@ header.site-header {
 }
  
 .card-frame {
+  position: relative;
   aspect-ratio: 1 / 1;
   width: 100%;
   overflow: hidden;
@@ -295,14 +296,21 @@ header.site-header {
     linear-gradient(225deg, #1c261c 25%, transparent 25%) -14px 0/28px 28px,
     linear-gradient(315deg, #1c261c 25%, transparent 25%) 0 0/28px 28px,
     linear-gradient(45deg, #1c261c 25%, #131c13 25%) 0 0/28px 28px;
-  border-style: solid;
-  border-color: transparent;
-  border-width: var(--frame-border-width);
-  border-image-slice: 25% fill;
-  border-image-repeat: round;
-  border-image-width: 1;
 }
- 
+
+/* Khung hoa văn: phủ NGUYÊN VẸN thiết kế gốc lên trên ảnh, không cắt/không lặp
+   (khác với border-image ở trên — dùng khi khung là 1 tác phẩm liền khối,
+   không đối xứng 4 góc, không lặp lại theo cạnh). */
+.card-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+  pointer-events: none;
+}
+
 .card-frame img {
   width: 100%;
   height: 100%;
@@ -312,9 +320,12 @@ header.site-header {
  
 .card:hover .card-frame img { transform: scale(1.05); }
  /* Per-level aspect ratios: category = video-standard 16:9, year = 1:1, date = 2:3 */
-.card-category .card-frame { aspect-ratio: 16 / 9; border-image-source: var(--frame-image-category); }
-.card-year .card-frame { aspect-ratio: 1 / 1; border-image-source: var(--frame-image-year); }
-.card-date .card-frame { aspect-ratio: 2 / 3; border-image-source: var(--frame-image-date); }
+.card-category .card-frame { aspect-ratio: 16 / 9; }
+.card-category .card-frame::after { background-image: var(--frame-image-category); }
+.card-year .card-frame { aspect-ratio: 1 / 1; }
+.card-year .card-frame::after { background-image: var(--frame-image-year); }
+.card-date .card-frame { aspect-ratio: 2 / 3; }
+.card-date .card-frame::after { background-image: var(--frame-image-date); }
 
 /* Per-level grid widths: category = 680px, year = 340px, date = 220px */
 .grid:has(.card-category) { grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); }
