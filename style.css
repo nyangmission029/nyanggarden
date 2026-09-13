@@ -19,6 +19,17 @@
   --radius: 2px;
   --gap: 28px;
   --max-width: 1240px;
+
+  /* Ảnh khung hoa văn — thay từng link bằng link Cloudinary thật sau khi upload
+     qua admin.html (mục "Upload ảnh lẻ"). Để trống ("") sẽ không hiện khung đó.
+     Mỗi loại card có tỉ lệ khác nhau nên dùng ảnh khung riêng cho từng loại:
+     - category: card ngang 16:9 (OFFSTAGE/AIRPORT, EVENT, CONCERT...)
+     - year:     card vuông 1:1 (các năm bên trong 1 danh mục)
+     - date:     card dọc 2:3 (từng bộ ảnh/ngày cụ thể) */
+  --frame-image-category: url("REPLACE_WITH_CATEGORY_FRAME_URL");
+  --frame-image-year: url("REPLACE_WITH_YEAR_FRAME_URL");
+  --frame-image-date: url("REPLACE_WITH_DATE_FRAME_URL");
+  --frame-border-width: 14px; /* độ dày dải khung quanh ảnh — chỉnh số này để dày/mỏng hơn */
 }
  
 * { box-sizing: border-box; }
@@ -284,6 +295,12 @@ header.site-header {
     linear-gradient(225deg, #1c261c 25%, transparent 25%) -14px 0/28px 28px,
     linear-gradient(315deg, #1c261c 25%, transparent 25%) 0 0/28px 28px,
     linear-gradient(45deg, #1c261c 25%, #131c13 25%) 0 0/28px 28px;
+  border-style: solid;
+  border-color: transparent;
+  border-width: var(--frame-border-width);
+  border-image-slice: 25% fill;
+  border-image-repeat: round;
+  border-image-width: 1;
 }
  
 .card-frame img {
@@ -295,9 +312,9 @@ header.site-header {
  
 .card:hover .card-frame img { transform: scale(1.05); }
  /* Per-level aspect ratios: category = video-standard 16:9, year = 1:1, date = 2:3 */
-.card-category .card-frame { aspect-ratio: 16 / 9; }
-.card-year .card-frame { aspect-ratio: 1 / 1; }
-.card-date .card-frame { aspect-ratio: 2 / 3; }
+.card-category .card-frame { aspect-ratio: 16 / 9; border-image-source: var(--frame-image-category); }
+.card-year .card-frame { aspect-ratio: 1 / 1; border-image-source: var(--frame-image-year); }
+.card-date .card-frame { aspect-ratio: 2 / 3; border-image-source: var(--frame-image-date); }
 
 /* Per-level grid widths: category = 680px, year = 340px, date = 220px */
 .grid:has(.card-category) { grid-template-columns: repeat(auto-fill, minmax(480px, 1fr)); }
