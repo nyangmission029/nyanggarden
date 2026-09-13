@@ -63,6 +63,8 @@ function imgWithFallback(src, alt) {
 function card({ href, cover, eyebrow, title, sub, external = false, target = "_self", extraClass = "" }) {
   const a = el("a", { class: "card" + (extraClass ? " " + extraClass : "") + (external ? " is-external" : ""), href, target });
   if (external) a.setAttribute("rel", "noopener noreferrer");
+  a.addEventListener("click", () => playSound("click"));
+  a.addEventListener("mouseenter", () => playSound("hover"));
   const frame = el("div", { class: "card-frame" }, cover ? imgWithFallback(cover, title) : null);
   const plate = el("div", { class: "card-plate" }, [
     eyebrow ? el("span", { class: "plate-eyebrow" }, eyebrow) : null,
@@ -93,9 +95,25 @@ const ICON_FACEBOOK = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13
 // Fill in the actual links here — this is the only part you need to edit.
 const CONTACT_LINKS = {
   email: "mailto:youremail@gmail.com",
-  x: "https://x.com/your_handle",
-  facebook: "https://facebook.com/your_page",
+  x: "https://x.com/nyangmission029",
+  facebook: "https://facebook.com/nyanggarden",
 };
+
+/* ---------- Sound effects ----------
+   Dán link Cloudinary (hoặc bất kỳ link .mp3/.wav nào) vào 3 chỗ dưới đây. ---------- */
+const SOUNDS = {
+  click: "https://res.cloudinary.com/jz2djjuo/video/upload/v1789312881/z7khk7hj1xwk6d7s8sid.mp3",
+  hover: "https://res.cloudinary.com/jz2djjuo/video/upload/v1789312881/g0qpymidm5kwthb2vdvg.mp3",
+  modal: "https://res.cloudinary.com/jz2djjuo/video/upload/v1789314181/lqyuticgrh98dax0csl6.mp3",
+};
+
+function playSound(key) {
+  const url = SOUNDS[key];
+  if (!url || url.includes("YOUR_")) return; // skip until a real link is filled in
+  const audio = new Audio(url);
+  audio.volume = 0.5;
+  audio.play().catch(() => {}); // browsers can block autoplay before any click — ignore silently
+}
 
 // Reusable icon buttons — used both on the hero (home page) and the plain
 // header (every other page), so Menu + Search work everywhere.
@@ -139,6 +157,7 @@ function divider() {
 /* ---------- Menu (list of categories, opens from any page) ---------- */
 
 function openMenuModal() {
+  playSound("modal");
   const closeBtn = el("button", { type: "button", class: "modal-close", "aria-label": "Close" }, "×");
   const list = el("nav", { class: "menu-list" });
 
@@ -240,6 +259,7 @@ async function buildSearchIndex() {
 }
 
 function openSearchModal() {
+  playSound("modal");
   let searchIndex = null;
   let indexError = null;
 
@@ -342,15 +362,18 @@ function makeCardId(name) {
 }
 
 function addCardTile(cat, yr) {
-  return el("button", { class: "card add-card", type: "button" }, [
+  const btn = el("button", { class: "card add-card", type: "button" }, [
     el("span", { class: "add-card-plus" }, "+"),
     el("span", { class: "add-card-label" }, "New Date"),
-  ]).also((btn) => btn.addEventListener("click", () => openAddCardModal(cat, yr)));
+  ]);
+  btn.addEventListener("mouseenter", () => playSound("hover"));
+  return btn.also((b) => b.addEventListener("click", () => { playSound("click"); openAddCardModal(cat, yr); }));
 }
 
 Element.prototype.also = function (fn) { fn(this); return this; };
 
 function openAddCardModal(cat, yr) {
+  playSound("modal");
   let coverUrl = "";
   let uploading = false;
 
@@ -385,7 +408,14 @@ function openAddCardModal(cat, yr) {
     formData.append("file", file);
     formData.append("upload_preset", UPLOAD_PRESET);
     fetch(UPLOAD_URL, { method: "POST", body: formData })
-      .then((res) => { if (!res.ok) throw new Error(`mã lỗi ${res.status}`); return res.json(); })
+      .then(async (res) => {
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          const msg = (data && data.error && data.error.message) || `mã lỗi ${res.status}`;
+          throw new Error(msg);
+        }
+        return data;
+      })
       .then((data) => { coverUrl = data.secure_url; statusEl.textContent = "✓ Ảnh bìa đã sẵn sàng"; uploading = false; })
       .catch((err) => { statusEl.classList.add("is-error"); statusEl.textContent = `✗ Lỗi tải ảnh: ${err.message}`; uploading = false; });
   }
