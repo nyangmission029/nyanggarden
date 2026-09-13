@@ -28,7 +28,7 @@
      - date:     card dọc 2:3 (từng bộ ảnh/ngày cụ thể) */
   --frame-image-category: url("REPLACE_WITH_CATEGORY_FRAME_URL");
   --frame-image-year: url("REPLACE_WITH_YEAR_FRAME_URL");
-  --frame-image-date: url("REPLACE_WITH_DATE_FRAME_URL");
+  --frame-image-date: url("https://res.cloudinary.com/jz2djjuo/image/upload/v1789328152/f3rpqhmcjqadx0smjjuk.png");
   --frame-border-width: 14px; /* độ dày dải khung quanh ảnh — chỉnh số này để dày/mỏng hơn */
 }
  
