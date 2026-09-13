@@ -102,9 +102,9 @@ const CONTACT_LINKS = {
 /* ---------- Sound effects ----------
    Dán link Cloudinary (hoặc bất kỳ link .mp3/.wav nào) vào 3 chỗ dưới đây. ---------- */
 const SOUNDS = {
-  click: "https://res.cloudinary.com/jz2djjuo/video/upload/v1789312881/z7khk7hj1xwk6d7s8sid.mp3",
-  hover: "https://res.cloudinary.com/jz2djjuo/video/upload/v1789312881/g0qpymidm5kwthb2vdvg.mp3",
-  modal: "https://res.cloudinary.com/jz2djjuo/video/upload/v1789314181/lqyuticgrh98dax0csl6.mp3",
+  click: "https://res.cloudinary.com/jz2djjuo/video/upload/v1789314808/fvhqyzrgxr7zlid3yk04.mp3",
+  hover: "https://res.cloudinary.com/jz2djjuo/video/upload/v1789314794/m43ob7tf6uztah7qwg2y.mp3",
+  modal: "https://res.cloudinary.com/jz2djjuo/video/upload/v1789314794/fyhhuhv8kb1zacu72vfm.mp3",
 };
 
 function playSound(key) {
