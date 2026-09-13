@@ -107,14 +107,26 @@ const SOUNDS = {
   modal: "https://res.cloudinary.com/jz2djjuo/video/upload/v1789314794/fyhhuhv8kb1zacu72vfm.mp3",
 };
 
+const soundCache = {};
+function preloadSounds() {
+  Object.keys(SOUNDS).forEach((key) => {
+    const url = SOUNDS[key];
+    if (!url || url.includes("YOUR_")) return;
+    const audio = new Audio(url);
+    audio.preload = "auto";
+    audio.load();
+    soundCache[key] = audio;
+  });
+}
+preloadSounds();
+
 function playSound(key) {
-  const url = SOUNDS[key];
-  if (!url || url.includes("YOUR_")) return; // skip until a real link is filled in
-  const audio = new Audio(url);
+  const audio = soundCache[key];
+  if (!audio) return; // skip until a real link is filled in
+  audio.currentTime = 0; // tua lại từ đầu để bấm liên tiếp vẫn phát trọn vẹn
   audio.volume = 0.5;
   audio.play().catch(() => {}); // browsers can block autoplay before any click — ignore silently
 }
-
 // Reusable icon buttons — used both on the hero (home page) and the plain
 // header (every other page), so Menu + Search work everywhere.
 function makeMenuButton(btnClass) {
