@@ -1,12 +1,10 @@
 [
   {
-    "id": "240212",
-    "name": "240212",
-    "label": "Ví dụ minh hoạ — xoá đi khi bạn tự thêm bộ ảnh thật",
-    "cover": "images/covers/media-example-cover.jpg",
+    "id": "260916",
+    "label": "260916",
+    "cover": "https://res.cloudinary.com/jz2djjuo/image/upload/v1789500712/dxykvf0t8qvth58wzdyv.jpg",
     "images": [
-      { "url": "https://res.cloudinary.com/.../vi-du-1.jpg", "note": "Ghi chú của tôi cho ảnh này" },
-      { "url": "https://res.cloudinary.com/.../vi-du-2.jpg", "note": "" }
+      { "url": "https://res.cloudinary.com/jz2djjuo/image/upload/v1789500712/dxykvf0t8qvth58wzdyv.jpg", "note": "riding around Han river. the sun was strong kk" }
     ]
   }
 ]
