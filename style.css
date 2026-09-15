@@ -20,13 +20,16 @@
   --gap: 28px;
   --max-width: 1240px;
 
-  /* Ảnh khung hoa văn 
+  /* Ảnh khung hoa văn — thay từng link bằng link Cloudinary thật sau khi upload
+     qua admin.html (mục "Upload ảnh lẻ"). Để trống ("") sẽ không hiện khung đó.
+     LƯU Ý: ảnh khung được PHỦ NGUYÊN VẸN lên card (không cắt/không lặp), nên
+     bạn nên chuẩn bị đúng tỉ lệ khung khớp với từng loại card để không bị méo:
      - category: card ngang 16:9 (OFFSTAGE/AIRPORT, EVENT, CONCERT...)
      - year:     card vuông 1:1 (các năm bên trong 1 danh mục)
      - date:     card dọc 2:3 (từng bộ ảnh/ngày cụ thể) */
   --frame-image-category: url("REPLACE_WITH_CATEGORY_FRAME_URL");
   --frame-image-year: url("REPLACE_WITH_YEAR_FRAME_URL");
-  --frame-image-date: url("https://res.cloudinary.com/jz2djjuo/image/upload/v1789330195/w4kevpegel5ppti1ktnu.png");
+  --frame-image-date: url("REPLACE_WITH_DATE_FRAME_URL");
 }
  
 * { box-sizing: border-box; }
@@ -304,7 +307,7 @@ header.site-header {
   inset: 0;
   background-repeat: no-repeat;
   background-position: center;
-  background-size: 100% 100%;
+  background-size: cover; /* giữ nguyên tỉ lệ khung — viền đặc đều, không bị kéo méo */
   pointer-events: none;
 }
 
@@ -721,4 +724,174 @@ footer.site-footer {
 .menu-list-item:hover,
 .menu-list-item:focus-visible {
   color: var(--accent-bright);
+}
+
+/* ---------- Gallery lightbox (DM MEDIA-style flat categories) ---------- */
+
+.gallery-card {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: block;
+}
+
+.gallery-modal-box {
+  max-width: 920px;
+}
+
+.gallery-body {
+  margin-top: 4px;
+}
+
+.gallery-thumb-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 8px;
+  max-height: 62vh;
+  overflow-y: auto;
+  padding-right: 2px;
+}
+
+.gallery-thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  transition: border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.gallery-thumb:hover,
+.gallery-thumb:focus-visible {
+  border-color: var(--accent-bright);
+  opacity: 0.9;
+}
+
+.gallery-viewer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.gallery-fullimg {
+  max-width: 100%;
+  max-height: 68vh;
+  display: block;
+  margin: 0 auto;
+}
+
+.gallery-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 8, 6, 0.55);
+  color: #f2efe9;
+  border: none;
+  border-radius: 50%;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.gallery-nav-btn:hover { background: rgba(5, 8, 6, 0.82); }
+.gallery-nav-prev { left: 10px; }
+.gallery-nav-next { right: 10px; }
+
+.gallery-note {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  max-width: 72%;
+  background: rgba(5, 8, 6, 0.74);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 13.5px;
+  line-height: 1.5;
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  white-space: pre-wrap;
+}
+
+.gallery-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.gallery-pager-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-size: 16px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.gallery-pager-btn:hover:not(:disabled),
+.gallery-pager-btn:focus-visible:not(:disabled) {
+  border-color: var(--accent-bright);
+  color: var(--accent-bright);
+}
+
+.gallery-pager-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.gallery-pager-label {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  min-width: 54px;
+  text-align: center;
+}
+
+.gallery-back-row {
+  margin-top: 14px;
+  text-align: center;
+}
+
+.gallery-back-link {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.gallery-back-link:hover { color: var(--accent-bright); }
+
+@media (max-width: 560px) {
+  .gallery-modal-box { padding: 20px; }
+  .gallery-nav-btn { width: 34px; height: 34px; font-size: 18px; }
+  .gallery-note { max-width: 88%; font-size: 12.5px; padding: 8px 10px; }
 }
