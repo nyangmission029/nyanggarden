@@ -63,8 +63,6 @@ function imgWithFallback(src, alt) {
 function card({ href, cover, eyebrow, title, sub, external = false, target = "_self", extraClass = "" }) {
   const a = el("a", { class: "card" + (extraClass ? " " + extraClass : "") + (external ? " is-external" : ""), href, target });
   if (external) a.setAttribute("rel", "noopener noreferrer");
-  a.addEventListener("click", () => playSound("click"));
-  a.addEventListener("mouseenter", () => playSound("hover"));
   const frame = el("div", { class: "card-frame" }, cover ? imgWithFallback(cover, title) : null);
   const plate = el("div", { class: "card-plate" }, [
     eyebrow ? el("span", { class: "plate-eyebrow" }, eyebrow) : null,
@@ -74,6 +72,22 @@ function card({ href, cover, eyebrow, title, sub, external = false, target = "_s
   a.appendChild(frame);
   a.appendChild(plate);
   return a;
+}
+
+// Same look as card(), but a <button> that opens the on-site gallery lightbox
+// instead of navigating anywhere (used by the "media" gallery category).
+function galleryCard(entry, eyebrowOverride) {
+  const btn = el("button", { type: "button", class: "card card-date gallery-card" });
+  const frame = el("div", { class: "card-frame" }, entry.cover ? imgWithFallback(entry.cover, entry.label || entry.name) : null);
+  const plate = el("div", { class: "card-plate" }, [
+    el("span", { class: "plate-eyebrow" }, eyebrowOverride || entry.name),
+    el("p", { class: "plate-title" }, entry.label || entry.name),
+    entry.label ? el("p", { class: "plate-sub" }, entry.name) : null,
+  ]);
+  btn.appendChild(frame);
+  btn.appendChild(plate);
+  btn.addEventListener("click", () => openGalleryModal(entry));
+  return btn;
 }
 
 function breadcrumb(parts) {
@@ -95,38 +109,10 @@ const ICON_FACEBOOK = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13
 // Fill in the actual links here — this is the only part you need to edit.
 const CONTACT_LINKS = {
   email: "mailto:youremail@gmail.com",
-  x: "https://x.com/nyangmission029",
-  facebook: "https://facebook.com/nyanggarden",
+  x: "https://x.com/your_handle",
+  facebook: "https://facebook.com/your_page",
 };
 
-/* ---------- Sound effects ----------
-   Dán link Cloudinary (hoặc bất kỳ link .mp3/.wav nào) vào 3 chỗ dưới đây. ---------- */
-const SOUNDS = {
-  click: "https://res.cloudinary.com/jz2djjuo/video/upload/v1789314808/fvhqyzrgxr7zlid3yk04.mp3",
-  hover: "https://res.cloudinary.com/jz2djjuo/video/upload/v1789314794/m43ob7tf6uztah7qwg2y.mp3",
-  modal: "https://res.cloudinary.com/jz2djjuo/video/upload/v1789314794/fyhhuhv8kb1zacu72vfm.mp3",
-};
-
-const soundCache = {};
-function preloadSounds() {
-  Object.keys(SOUNDS).forEach((key) => {
-    const url = SOUNDS[key];
-    if (!url || url.includes("YOUR_")) return;
-    const audio = new Audio(url);
-    audio.preload = "auto";
-    audio.load();
-    soundCache[key] = audio;
-  });
-}
-preloadSounds();
-
-function playSound(key) {
-  const audio = soundCache[key];
-  if (!audio) return; // skip until a real link is filled in
-  audio.currentTime = 0; // tua lại từ đầu để bấm liên tiếp vẫn phát trọn vẹn
-  audio.volume = 0.5;
-  audio.play().catch(() => {}); // browsers can block autoplay before any click — ignore silently
-}
 // Reusable icon buttons — used both on the hero (home page) and the plain
 // header (every other page), so Menu + Search work everywhere.
 function makeMenuButton(btnClass) {
@@ -166,10 +152,117 @@ function divider() {
   return el("div", { class: "divider", "aria-hidden": "true" }, DIVIDER_TEXT);
 }
 
+/* ---------- Gallery lightbox (for "media"-type flat categories) ----------
+   entry = { id, name, label, cover, images: [{ url, note }] }
+   Two views inside the same modal: thumbnail grid, and a fullsize viewer
+   with prev/next + an optional note overlay in the corner. ---------- */
+
+function openGalleryModal(entry) {
+  const images = entry.images || [];
+  const PAGE_SIZE = 30;
+  let index = null; // null = grid view, number = fullsize view
+  let page = 0;
+
+  const closeBtn = el("button", { type: "button", class: "modal-close", "aria-label": "Close" }, "×");
+  const titleEl = el("h3", { class: "modal-title" }, entry.label || entry.name);
+  const body = el("div", { class: "gallery-body" });
+  const modalBox = el("div", { class: "modal-box gallery-modal-box" }, [closeBtn, titleEl, body]);
+  const backdrop = el("div", { class: "modal-backdrop" }, [modalBox]);
+
+  function close() {
+    document.body.removeChild(backdrop);
+    document.removeEventListener("keydown", onKeyDown);
+  }
+  function onKeyDown(e) {
+    if (e.key === "Escape") { close(); return; }
+    if (index !== null) {
+      if (e.key === "ArrowLeft") showIndex(index - 1);
+      if (e.key === "ArrowRight") showIndex(index + 1);
+    }
+  }
+
+  function showGrid() {
+    index = null;
+    titleEl.textContent = entry.label || entry.name;
+
+    const totalPages = Math.max(1, Math.ceil(images.length / PAGE_SIZE));
+    page = Math.min(Math.max(page, 0), totalPages - 1);
+
+    const start = page * PAGE_SIZE;
+    const pageImages = images.slice(start, start + PAGE_SIZE);
+
+    const thumbGrid = el("div", { class: "gallery-thumb-grid" });
+    pageImages.forEach((img, i) => {
+      const globalIndex = start + i;
+      const thumb = el("img", { src: img.url, alt: "", loading: "lazy", class: "gallery-thumb" });
+      thumb.addEventListener("click", () => showIndex(globalIndex));
+      thumbGrid.appendChild(thumb);
+    });
+
+    const children = [images.length ? thumbGrid : el("p", { class: "search-empty" }, "Chưa có ảnh nào trong bộ này.")];
+
+    if (totalPages > 1) {
+      const prevAttrs = { type: "button", class: "gallery-pager-btn", "aria-label": "Trang trước" };
+      if (page === 0) prevAttrs.disabled = "";
+      const nextAttrs = { type: "button", class: "gallery-pager-btn", "aria-label": "Trang sau" };
+      if (page === totalPages - 1) nextAttrs.disabled = "";
+
+      const prevPageBtn = el("button", prevAttrs, "«");
+      const pageLabel = el("span", { class: "gallery-pager-label" }, `${page + 1} / ${totalPages}`);
+      const nextPageBtn = el("button", nextAttrs, "»");
+
+      prevPageBtn.addEventListener("click", () => { page -= 1; showGrid(); });
+      nextPageBtn.addEventListener("click", () => { page += 1; showGrid(); });
+
+      children.push(el("div", { class: "gallery-pager" }, [prevPageBtn, pageLabel, nextPageBtn]));
+    }
+
+    body.replaceChildren(...children);
+  }
+
+  function showIndex(i) {
+    if (!images.length) return;
+    index = (i + images.length) % images.length;
+    const img = images[index];
+    titleEl.textContent = `${entry.label || entry.name} — ${index + 1}/${images.length}`;
+
+    const viewer = el("div", { class: "gallery-viewer" }, [
+      el("img", { src: img.url, alt: "", class: "gallery-fullimg" }),
+    ]);
+
+    if (images.length > 1) {
+      const prevBtn = el("button", { type: "button", class: "gallery-nav-btn gallery-nav-prev", "aria-label": "Ảnh trước" }, "‹");
+      const nextBtn = el("button", { type: "button", class: "gallery-nav-btn gallery-nav-next", "aria-label": "Ảnh sau" }, "›");
+      prevBtn.addEventListener("click", () => showIndex(index - 1));
+      nextBtn.addEventListener("click", () => showIndex(index + 1));
+      viewer.appendChild(prevBtn);
+      viewer.appendChild(nextBtn);
+    }
+
+    if (img.note && img.note.trim()) {
+      viewer.appendChild(el("div", { class: "gallery-note" }, img.note));
+    }
+
+    const backLink = el("button", { type: "button", class: "gallery-back-link" }, "‹ Xem tất cả ảnh");
+    backLink.addEventListener("click", () => {
+      page = Math.floor(index / PAGE_SIZE);
+      showGrid();
+    });
+
+    body.replaceChildren(viewer, el("div", { class: "gallery-back-row" }, [backLink]));
+  }
+
+  backdrop.addEventListener("click", (e) => { if (e.target === backdrop) close(); });
+  closeBtn.addEventListener("click", close);
+  document.addEventListener("keydown", onKeyDown);
+
+  showGrid();
+  document.body.appendChild(backdrop);
+}
+
 /* ---------- Menu (list of categories, opens from any page) ---------- */
 
 function openMenuModal() {
-  playSound("modal");
   const closeBtn = el("button", { type: "button", class: "modal-close", "aria-label": "Close" }, "×");
   const list = el("nav", { class: "menu-list" });
 
@@ -235,6 +328,11 @@ async function buildSearchIndex() {
     index.push({ catName, yrLabel, d, haystack });
   }
 
+  function pushGalleryEntry(catName, entry) {
+    const haystack = normalizeText(`${catName} ${entry.name} ${entry.label || ""}`);
+    index.push({ catName, isGallery: true, entry, haystack });
+  }
+
   await Promise.all(
     yearRefs.map(async ({ cat, yr, yrLabel }) => {
       let dates;
@@ -256,8 +354,13 @@ async function buildSearchIndex() {
         return; // skip categories whose file failed to load
       }
       if (Array.isArray(content)) {
-        // Flat 2-level category (e.g. OTHERS)
-        content.forEach((d) => pushEntry(cat.name, null, d));
+        if (cat.isGallery) {
+          // Flat gallery category (e.g. DM MEDIA): index by entry, opens lightbox
+          content.forEach((entry) => pushGalleryEntry(cat.name, entry));
+        } else {
+          // Flat 2-level category (e.g. OTHERS)
+          content.forEach((d) => pushEntry(cat.name, null, d));
+        }
       } else if (content && Array.isArray(content.years)) {
         // Nested 3-level-in-one-file category (e.g. CONCERT, FANCAM)
         content.years.forEach((yr) => {
@@ -271,7 +374,6 @@ async function buildSearchIndex() {
 }
 
 function openSearchModal() {
-  playSound("modal");
   let searchIndex = null;
   let indexError = null;
 
@@ -294,6 +396,10 @@ function openSearchModal() {
 
     const grid = el("div", { class: "grid search-result-grid" });
     matches.slice(0, 30).forEach((item) => {
+      if (item.isGallery) {
+        grid.appendChild(galleryCard(item.entry, item.catName));
+        return;
+      }
       grid.appendChild(
         card({
           href: item.d.link,
@@ -345,7 +451,7 @@ function openSearchModal() {
 /* ---------- Edit mode + inline "add date card" ---------- */
 
 const CLOUD_NAME = "jz2djjuo";
-const UPLOAD_PRESET = "nyangmission029";
+const UPLOAD_PRESET = "nyangmi";
 const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
 const EDIT_SECRET = "nyangmi";
 
@@ -374,18 +480,15 @@ function makeCardId(name) {
 }
 
 function addCardTile(cat, yr) {
-  const btn = el("button", { class: "card add-card", type: "button" }, [
+  return el("button", { class: "card add-card", type: "button" }, [
     el("span", { class: "add-card-plus" }, "+"),
     el("span", { class: "add-card-label" }, "New Date"),
-  ]);
-  btn.addEventListener("mouseenter", () => playSound("hover"));
-  return btn.also((b) => b.addEventListener("click", () => { playSound("click"); openAddCardModal(cat, yr); }));
+  ]).also((btn) => btn.addEventListener("click", () => openAddCardModal(cat, yr)));
 }
 
 Element.prototype.also = function (fn) { fn(this); return this; };
 
 function openAddCardModal(cat, yr) {
-  playSound("modal");
   let coverUrl = "";
   let uploading = false;
 
@@ -420,14 +523,7 @@ function openAddCardModal(cat, yr) {
     formData.append("file", file);
     formData.append("upload_preset", UPLOAD_PRESET);
     fetch(UPLOAD_URL, { method: "POST", body: formData })
-      .then(async (res) => {
-        const data = await res.json().catch(() => null);
-        if (!res.ok) {
-          const msg = (data && data.error && data.error.message) || `mã lỗi ${res.status}`;
-          throw new Error(msg);
-        }
-        return data;
-      })
+      .then((res) => { if (!res.ok) throw new Error(`mã lỗi ${res.status}`); return res.json(); })
       .then((data) => { coverUrl = data.secure_url; statusEl.textContent = "✓ Ảnh bìa đã sẵn sàng"; uploading = false; })
       .catch((err) => { statusEl.classList.add("is-error"); statusEl.textContent = `✗ Lỗi tải ảnh: ${err.message}`; uploading = false; });
   }
@@ -572,7 +668,7 @@ function renderCategoryYears(cat) {
   app.replaceChildren(
     header(),
     el("main", { class: "wrap" }, [
-      breadcrumb([{ label: "HOME", href: "#/" }, { label: cat.name }]),
+      breadcrumb([{ label: "Home", href: "#/" }, { label: cat.name }]),
       el("div", { class: "section-head" }, [
         el("h2", {}, cat.name),
         el("span", { class: "section-count" }, `${sortedYears.length} total`),
@@ -670,12 +766,37 @@ function renderYearGridFromFile(cat, years) {
   app.replaceChildren(
     header(),
     el("main", { class: "wrap" }, [
-      breadcrumb([{ label: "HOME", href: "#/" }, { label: cat.name }]),
+      breadcrumb([{ label: "Home", href: "#/" }, { label: cat.name }]),
       el("div", { class: "section-head" }, [
         el("h2", {}, cat.name),
         el("span", { class: "section-count" }, `${sortedYears.length} total`),
       ]),
       sortedYears.length ? grid : emptyState("No years added yet — add one in this data file"),
+    ]),
+    footer()
+  );
+}
+
+// Renders a flat "gallery" category (e.g. DM MEDIA): each entry opens an
+// on-site lightbox (openGalleryModal) instead of linking to an external archive.
+function renderGalleryGrid(cat, entries) {
+  document.title = `${cat.name} — ${DATA.siteName}`;
+  const sortedEntries = [...entries].sort((a, b) =>
+    String(a.id).localeCompare(String(b.id), undefined, { numeric: true })
+  );
+  const grid = el("div", { class: "grid" });
+  sortedEntries.forEach((entry) => {
+    grid.appendChild(galleryCard(entry));
+  });
+  app.replaceChildren(
+    header(),
+    el("main", { class: "wrap" }, [
+      breadcrumb([{ label: "Home", href: "#/" }, { label: cat.name }]),
+      el("div", { class: "section-head" }, [
+        el("h2", {}, cat.name),
+        el("span", { class: "section-count" }, `${sortedEntries.length} total`),
+      ]),
+      sortedEntries.length ? grid : emptyState("No sets added yet — add one via admin.html"),
     ]),
     footer()
   );
@@ -695,7 +816,7 @@ async function renderCategory(catId) {
   app.replaceChildren(
     header(),
     el("main", { class: "wrap" }, [
-      breadcrumb([{ label: "HOME", href: "#/" }, { label: cat.name }]),
+      breadcrumb([{ label: "Home", href: "#/" }, { label: cat.name }]),
       el("div", { class: "section-head" }, [el("h2", {}, cat.name)]),
       emptyState("Đang tải…"),
     ]),
@@ -713,10 +834,16 @@ async function renderCategory(catId) {
   if (location.hash.replace(/^#\/?/, "") !== cat.id) return;
 
   if (Array.isArray(content)) {
+    if (cat.isGallery) {
+      // Flat gallery category (e.g. DM MEDIA): each entry has "images" and opens
+      // a lightbox on-site instead of linking out.
+      renderGalleryGrid(cat, content);
+      return;
+    }
     // Flat 2-level category (e.g. OTHERS): the file itself IS the array of leaf entries.
     renderDatesGrid({
       dates: content,
-      breadcrumbParts: [{ label: "HOME", href: "#/" }, { label: cat.name }],
+      breadcrumbParts: [{ label: "Home", href: "#/" }, { label: cat.name }],
       heading: cat.name,
       editContext: { cat, yr: { name: cat.name, file: cat.file } },
     });
@@ -743,7 +870,7 @@ async function renderYear(catId, yearId) {
     return renderDatesPage({
       source: yr,
       breadcrumbParts: [
-        { label: "HOME", href: "#/" },
+        { label: "Home", href: "#/" },
         { label: cat.name, href: `#/${cat.id}` },
         { label: yr.name },
       ],
@@ -761,7 +888,7 @@ async function renderYear(catId, yearId) {
       header(),
       el("main", { class: "wrap" }, [
         breadcrumb([
-          { label: "HOME", href: "#/" },
+          { label: "Home", href: "#/" },
           { label: cat.name, href: `#/${cat.id}` },
           { label: yearId },
         ]),
@@ -804,7 +931,7 @@ function renderNotFound() {
   app.replaceChildren(
     header(),
     el("main", { class: "wrap" }, [
-      breadcrumb([{ label: "HOME", href: "#/" }, { label: "Not found" }]),
+      breadcrumb([{ label: "Home", href: "#/" }, { label: "Not found" }]),
       emptyState("That page doesn't exist."),
     ]),
     footer()
