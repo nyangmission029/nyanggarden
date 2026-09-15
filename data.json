@@ -112,6 +112,13 @@
       "file": "data/concert.json"
     },
     {
+      "id": "dm-media",
+      "name": "DM MEDIA",
+      "cover": "images/covers/media-cover.jpg",
+      "isGallery": true,
+      "file": "data/dm-media.json"
+    },
+    {
       "id": "fancam",
       "name": "FANCAM",
       "cover": "images/covers/fancam-cover.jpg",
