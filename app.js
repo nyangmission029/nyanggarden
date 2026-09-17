@@ -112,16 +112,7 @@ function makeMenuButton(btnClass) {
   btn.addEventListener("click", openMenuModal);
   return btn;
 }
-const ICON_MAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 6.5l8 6.5 8-6.5"/></svg>`;
-const ICON_X = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.53 3H20.8l-7.14 8.16L22 21h-6.53l-5.12-6.7L4.5 21H1.23l7.64-8.73L2 3h6.7l4.63 6.13L17.53 3zm-1.14 16.17h1.8L7.7 4.73H5.76l10.63 14.44z"/></svg>`;
-const ICON_FACEBOOK = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-8.1h2.72l.41-3.15H13.5V7.75c0-.91.25-1.53 1.56-1.53h1.67V3.42C16.44 3.29 15.44 3.2 14.29 3.2c-2.4 0-4.04 1.46-4.04 4.15v2.4H7.5v3.15h2.75V21h3.25z"/></svg>`;
-
 // Fill in the actual links here — this is the only part you need to edit.
-const CONTACT_LINKS = {
-  email: "mailto:youremail@gmail.com",
-  x: "https://x.com/your_handle",
-  facebook: "https://facebook.com/your_page",
-};
 
 /* ---------- Horizontal site nav (replaces the old hamburger Menu icon) ----------
    Shows on the hero of EVERY page, not just home. "Haven" and "Leave a note!"
@@ -133,7 +124,7 @@ const NAV_ITEMS = [
   { label: "Garden Gate", icon: "https://res.cloudinary.com/jz2djjuo/image/upload/v1789575245/suoc0ubftervxnhqkf40.png", href: "#/", isActive: (top) => top === "" },
   { label: "Gallery", icon: "https://res.cloudinary.com/jz2djjuo/image/upload/v1789575245/p7qjuy7r3qsfcypcv8vg.png", href: "#/gallery", isActive: (top) => top === "gallery" || GALLERY_HUB_CATEGORY_IDS.includes(top) },
   { label: "In Bloom", icon: "https://res.cloudinary.com/jz2djjuo/image/upload/v1789575245/r1z2iorzk81ooqbk3cgc.png", href: "#/fancam", isActive: (top) => top === "fancam" },
-  { label: "Nyang Grove", icon: "https://res.cloudinary.com/jz2djjuo/image/upload/v1789575245/jl5yciixbi56pvqsgjsp.png", href: "#/media", isActive: (top) => top === "media" },
+  { label: "Nyang Grove", icon: "https://res.cloudinary.com/jz2djjuo/image/upload/v1789575245/jl5yciixbi56pvqsgjsp.png", href: "#/dm-media", isActive: (top) => top === "dm-media" },
   { label: "Haven", icon: "https://res.cloudinary.com/jz2djjuo/image/upload/v1789575245/pgfjfhsysmmckd95q8vu.png", href: "#/", isActive: () => false, comingSoon: true },
   { label: "Leave a note!", icon: "https://res.cloudinary.com/jz2djjuo/image/upload/v1789575245/hqfge8zczjrpt11qi88a.png", href: "#/", isActive: () => false, comingSoon: true },
 ];
@@ -481,7 +472,7 @@ function openSearchModal() {
 /* ---------- Edit mode + inline "add date card" ---------- */
 
 const CLOUD_NAME = "jz2djjuo";
-const UPLOAD_PRESET = "nyangmi";
+const UPLOAD_PRESET = "nyangmission029";
 const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
 const EDIT_SECRET = "nyangmi";
 
@@ -553,7 +544,14 @@ function openAddCardModal(cat, yr) {
     formData.append("file", file);
     formData.append("upload_preset", UPLOAD_PRESET);
     fetch(UPLOAD_URL, { method: "POST", body: formData })
-      .then((res) => { if (!res.ok) throw new Error(`mã lỗi ${res.status}`); return res.json(); })
+      .then(async (res) => {
+        const data = await res.json().catch(() => null);
+        if (!res.ok) {
+          const msg = (data && data.error && data.error.message) || `mã lỗi ${res.status}`;
+          throw new Error(msg);
+        }
+        return data;
+      })
       .then((data) => { coverUrl = data.secure_url; statusEl.textContent = "✓ Ảnh bìa đã sẵn sàng"; uploading = false; })
       .catch((err) => { statusEl.classList.add("is-error"); statusEl.textContent = `✗ Lỗi tải ảnh: ${err.message}`; uploading = false; });
   }
@@ -633,7 +631,7 @@ function header() {
 // Only these top-level routes show the full hero (photo + title + horizontal nav).
 // Everything else (year/date pages, and Gallery-hub categories' own top page) uses
 // the plain header() instead.
-const HERO_TOP_LEVEL_CATEGORY_IDS = ["fancam", "media"];
+const HERO_TOP_LEVEL_CATEGORY_IDS = ["fancam", "dm-media"];
 
 // Returns the array of nodes to prepend for a page: [heroBanner, divider] or [header].
 // Spread this into app.replaceChildren(...pageShell(useHero), mainEl, footer()).
@@ -642,16 +640,10 @@ function pageShell(useHero) {
 }
 
 function footer() {
-  const contactRow = el("div", { class: "footer-contact" }, [
-    el("a", { href: CONTACT_LINKS.email, class: "footer-icon-btn", "aria-label": "Email", target: "_blank", html: ICON_MAIL }),
-    el("a", { href: CONTACT_LINKS.x, class: "footer-icon-btn", "aria-label": "X", target: "_blank", rel: "noopener noreferrer", html: ICON_X }),
-    el("a", { href: CONTACT_LINKS.facebook, class: "footer-icon-btn", "aria-label": "Facebook", target: "_blank", rel: "noopener noreferrer", html: ICON_FACEBOOK }),
-  ]);
   return el("footer", { class: "site-footer" }, [
     divider(),
     el("div", { class: "wrap site-footer-row" }, [
       el("p", { class: "footer-copyright" }, `© ${new Date().getFullYear()} — All images belong to their respective owners. No copyright infringement intended.`),
-      contactRow,
     ]),
   ]);
 }
