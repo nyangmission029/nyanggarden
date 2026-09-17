@@ -380,7 +380,6 @@ ccGenerateBtn.addEventListener("click", () => {
 
   const entry = {
     id: ccMakeId(name),
-    name: name,
     label: ccLabel.value.trim(),
     cover: ccCoverUrl || "images/covers/REPLACE_ME.jpg",
     link: ccLink.value.trim() || "https://mega.nz/folder/YOUR_LINK_HERE",
