@@ -78,11 +78,10 @@ function card({ href, cover, eyebrow, title, sub, external = false, target = "_s
 // instead of navigating anywhere (used by the "media" gallery category).
 function galleryCard(entry, eyebrowOverride) {
   const btn = el("button", { type: "button", class: "card card-date gallery-card" });
-  const frame = el("div", { class: "card-frame" }, entry.cover ? imgWithFallback(entry.cover, entry.label || entry.name) : null);
+  const frame = el("div", { class: "card-frame" }, entry.cover ? imgWithFallback(entry.cover, entry.label || entry.id) : null);
   const plate = el("div", { class: "card-plate" }, [
-    el("span", { class: "plate-eyebrow" }, eyebrowOverride || entry.name),
-    el("p", { class: "plate-title" }, entry.label || entry.name),
-    entry.label ? el("p", { class: "plate-sub" }, entry.name) : null,
+    el("span", { class: "plate-eyebrow" }, eyebrowOverride || entry.id),
+    el("p", { class: "plate-title" }, entry.label || entry.id),
   ]);
   btn.appendChild(frame);
   btn.appendChild(plate);
@@ -100,7 +99,6 @@ function breadcrumb(parts) {
   return wrap;
 }
 
-const ICON_MENU = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>`;
 const ICON_SEARCH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`;
 const ICON_MAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 6.5l8 6.5 8-6.5"/></svg>`;
 const ICON_X = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.53 3H20.8l-7.14 8.16L22 21h-6.53l-5.12-6.7L4.5 21H1.23l7.64-8.73L2 3h6.7l4.63 6.13L17.53 3zm-1.14 16.17h1.8L7.7 4.73H5.76l10.63 14.44z"/></svg>`;
@@ -113,21 +111,42 @@ const CONTACT_LINKS = {
   facebook: "https://facebook.com/your_page",
 };
 
-// Reusable icon buttons — used both on the hero (home page) and the plain
-// header (every other page), so Menu + Search work everywhere.
-function makeMenuButton(btnClass) {
-  const btn = el("button", { class: btnClass, "aria-label": "Menu", html: ICON_MENU });
-  btn.addEventListener("click", openMenuModal);
-  return btn;
-}
-function makeSearchButton(btnClass) {
-  const btn = el("button", { class: btnClass, "aria-label": "Search", html: ICON_SEARCH });
-  btn.addEventListener("click", openSearchModal);
-  return btn;
+/* ---------- Horizontal site nav (replaces the old hamburger Menu icon) ----------
+   Shows on the hero of EVERY page, not just home. "Haven" and "Leave a note!"
+   are placeholders for now — point home until you tell me what they should do. ---------- */
+
+const GALLERY_HUB_CATEGORY_IDS = ["event", "offstage", "concert", "others"];
+
+const NAV_ITEMS = [
+  { label: "Garden Gate", icon: "https://res.cloudinary.com/jz2djjuo/image/upload/v1789575245/suoc0ubftervxnhqkf40.png", href: "#/", isActive: (top) => top === "" },
+  { label: "Gallery", icon: "https://res.cloudinary.com/jz2djjuo/image/upload/v1789575245/p7qjuy7r3qsfcypcv8vg.png", href: "#/gallery", isActive: (top) => top === "gallery" || GALLERY_HUB_CATEGORY_IDS.includes(top) },
+  { label: "In Bloom", icon: "https://res.cloudinary.com/jz2djjuo/image/upload/v1789575245/r1z2iorzk81ooqbk3cgc.png", href: "#/fancam", isActive: (top) => top === "fancam" },
+  { label: "Nyang Grove", icon: "https://res.cloudinary.com/jz2djjuo/image/upload/v1789575245/jl5yciixbi56pvqsgjsp.png", href: "#/media", isActive: (top) => top === "media" },
+  { label: "Haven", icon: "https://res.cloudinary.com/jz2djjuo/image/upload/v1789575245/pgfjfhsysmmckd95q8vu.png", href: "#/", isActive: () => false, comingSoon: true },
+  { label: "Leave a note!", icon: "https://res.cloudinary.com/jz2djjuo/image/upload/v1789575245/hqfge8zczjrpt11qi88a.png", href: "#/", isActive: () => false, comingSoon: true },
+];
+
+function siteNav() {
+  const hash = location.hash.replace(/^#\/?/, "");
+  const top = hash.split("/").filter(Boolean)[0] || "";
+  const nav = el("nav", { class: "site-nav", "aria-label": "Primary" });
+  NAV_ITEMS.forEach((item) => {
+    const attrs = { href: item.href, class: "site-nav-link" + (item.isActive(top) ? " is-active" : "") };
+    if (item.comingSoon) attrs.title = "Sắp ra mắt";
+    nav.appendChild(
+      el("a", attrs, [
+        el("img", { class: "site-nav-icon", src: item.icon, alt: "" }),
+        el("span", {}, item.label),
+      ])
+    );
+  });
+  return nav;
 }
 
 function heroBanner() {
   const hero = DATA.hero || {};
+  const searchBtn = el("button", { class: "hero-icon-btn", "aria-label": "Search", html: ICON_SEARCH });
+  searchBtn.addEventListener("click", openSearchModal);
   return el("div", { class: "hero" }, [
     hero.image ? (() => {
       const img = el("img", { class: "hero-img", src: hero.image, alt: hero.title || DATA.siteName, loading: "eager" });
@@ -135,8 +154,8 @@ function heroBanner() {
       return img;
     })() : null,
     el("div", { class: "hero-topbar" }, [
-      makeMenuButton("hero-icon-btn"),
-      makeSearchButton("hero-icon-btn"),
+      siteNav(),
+      searchBtn,
     ]),
     el("div", { class: "hero-body" }, [
       el("h1", { class: "hero-title" }, hero.title || DATA.siteName),
@@ -164,7 +183,7 @@ function openGalleryModal(entry) {
   let page = 0;
 
   const closeBtn = el("button", { type: "button", class: "modal-close", "aria-label": "Close" }, "×");
-  const titleEl = el("h3", { class: "modal-title" }, entry.label || entry.name);
+  const titleEl = el("h3", { class: "modal-title" }, entry.label || entry.id);
   const body = el("div", { class: "gallery-body" });
   const modalBox = el("div", { class: "modal-box gallery-modal-box" }, [closeBtn, titleEl, body]);
   const backdrop = el("div", { class: "modal-backdrop" }, [modalBox]);
@@ -183,7 +202,7 @@ function openGalleryModal(entry) {
 
   function showGrid() {
     index = null;
-    titleEl.textContent = entry.label || entry.name;
+    titleEl.textContent = entry.label || entry.id;
 
     const totalPages = Math.max(1, Math.ceil(images.length / PAGE_SIZE));
     page = Math.min(Math.max(page, 0), totalPages - 1);
@@ -224,7 +243,7 @@ function openGalleryModal(entry) {
     if (!images.length) return;
     index = (i + images.length) % images.length;
     const img = images[index];
-    titleEl.textContent = `${entry.label || entry.name} — ${index + 1}/${images.length}`;
+    titleEl.textContent = `${entry.label || entry.id} — ${index + 1}/${images.length}`;
 
     const viewer = el("div", { class: "gallery-viewer" }, [
       el("img", { src: img.url, alt: "", class: "gallery-fullimg" }),
@@ -260,44 +279,6 @@ function openGalleryModal(entry) {
   document.body.appendChild(backdrop);
 }
 
-/* ---------- Menu (list of categories, opens from any page) ---------- */
-
-function openMenuModal() {
-  const closeBtn = el("button", { type: "button", class: "modal-close", "aria-label": "Close" }, "×");
-  const list = el("nav", { class: "menu-list" });
-
-  function close() {
-    document.body.removeChild(backdrop);
-    document.removeEventListener("keydown", onKeyDown);
-  }
-  function onKeyDown(e) {
-    if (e.key === "Escape") close();
-  }
-
-  const homeLink = el("a", { href: "#/", class: "menu-list-item" }, "Home");
-  homeLink.addEventListener("click", close);
-  list.appendChild(homeLink);
-
-  DATA.categories.forEach((cat) => {
-    const link = el("a", { href: `#/${cat.id}`, class: "menu-list-item" }, cat.name);
-    link.addEventListener("click", close);
-    list.appendChild(link);
-  });
-
-  const modalBox = el("div", { class: "modal-box menu-modal-box" }, [
-    closeBtn,
-    el("h3", { class: "modal-title" }, "Menu"),
-    list,
-  ]);
-  const backdrop = el("div", { class: "modal-backdrop" }, [modalBox]);
-
-  backdrop.addEventListener("click", (e) => { if (e.target === backdrop) close(); });
-  closeBtn.addEventListener("click", close);
-  document.addEventListener("keydown", onKeyDown);
-
-  document.body.appendChild(backdrop);
-}
-
 /* ---------- Search (works from any page) ----------
    Works across BOTH category shapes: 3-level (category -> years -> dates)
    and 2-level (category -> dates directly via category.file). ---------- */
@@ -324,12 +305,12 @@ async function buildSearchIndex() {
   });
 
   function pushEntry(catName, yrLabel, d) {
-    const haystack = normalizeText(`${catName} ${yrLabel || ""} ${d.name} ${d.label || ""}`);
+    const haystack = normalizeText(`${catName} ${yrLabel || ""} ${d.id} ${d.label || ""}`);
     index.push({ catName, yrLabel, d, haystack });
   }
 
   function pushGalleryEntry(catName, entry) {
-    const haystack = normalizeText(`${catName} ${entry.name} ${entry.label || ""}`);
+    const haystack = normalizeText(`${catName} ${entry.id} ${entry.label || ""}`);
     index.push({ catName, isGallery: true, entry, haystack });
   }
 
@@ -407,8 +388,7 @@ function openSearchModal() {
           external: true,
           cover: item.d.cover,
           eyebrow: item.yrLabel ? `${item.catName} / ${item.yrLabel}` : item.catName,
-          title: item.d.label || item.d.name,
-          sub: item.d.label ? item.d.name : null,
+          title: item.d.label || item.d.id,
           extraClass: "card-date",
         })
       );
@@ -537,11 +517,10 @@ function openAddCardModal(cat, yr) {
   const generateBtn = el("button", { type: "button", class: "pick-btn cc-generate-btn" }, "Tạo card");
   generateBtn.addEventListener("click", () => {
     const name = nameInput.value.trim();
-    if (!name) { alert("Điền tên hiển thị cho card (VD: 21.08.2024)."); return; }
+    if (!name) { alert("Điền mã ngày cho card (VD: 21.08.2024 hoặc 240821)."); return; }
     if (uploading) { alert("Ảnh bìa đang tải lên, đợi 1-2 giây rồi bấm lại nhé."); return; }
     const entry = {
       id: makeCardId(name),
-      name,
       label: labelInput.value.trim(),
       cover: coverUrl || "images/covers/REPLACE_ME.jpg",
       link: linkInput.value.trim() || "https://mega.nz/folder/YOUR_LINK_HERE",
@@ -571,8 +550,8 @@ function openAddCardModal(cat, yr) {
   const modalBox = el("div", { class: "modal-box" }, [
     closeBtn,
     el("h3", { class: "modal-title" }, titleText),
-    el("label", { class: "cc-field" }, [el("span", {}, "Tên hiển thị (VD: 21.08.2024)"), nameInput]),
-    el("label", { class: "cc-field" }, [el("span", {}, "Mô tả ngắn — không bắt buộc"), labelInput]),
+    el("label", { class: "cc-field" }, [el("span", {}, "Mã ngày — dùng làm id (VD: 21.08.2024 hoặc 240821)"), nameInput]),
+    el("label", { class: "cc-field" }, [el("span", {}, "Label — tên hiển thị trên card"), labelInput]),
     el("label", { class: "cc-field" }, [el("span", {}, "Link kho ảnh gốc — không bắt buộc"), linkInput]),
     el("div", { class: "cc-field" }, [el("span", {}, "Ảnh bìa"), dropZone, statusEl]),
     generateBtn,
@@ -583,22 +562,6 @@ function openAddCardModal(cat, yr) {
   backdrop.addEventListener("click", (e) => { if (e.target === backdrop) document.body.removeChild(backdrop); });
   closeBtn.addEventListener("click", () => document.body.removeChild(backdrop));
   document.body.appendChild(backdrop);
-}
-
-function header() {
-  return el("header", { class: "site-header" }, [
-    el("div", { class: "wrap site-header-row" }, [
-      el("div", { class: "site-header-text" }, [
-        el("h1", { class: "site-title" }, [el("a", { href: "#/" }, DATA.siteName)]),
-        el("p", { class: "site-subtitle" }, DATA.siteSubtitle || ""),
-      ]),
-      el("div", { class: "site-header-icons" }, [
-        makeMenuButton("header-icon-btn"),
-        makeSearchButton("header-icon-btn"),
-      ]),
-    ]),
-    divider(),
-  ]);
 }
 
 function footer() {
@@ -666,7 +629,8 @@ function renderCategoryYears(cat) {
     );
   });
   app.replaceChildren(
-    header(),
+    heroBanner(),
+    divider(),
     el("main", { class: "wrap" }, [
       breadcrumb([{ label: "Home", href: "#/" }, { label: cat.name }]),
       el("div", { class: "section-head" }, [
@@ -694,9 +658,8 @@ function renderDatesGrid({ dates, breadcrumbParts, heading, editContext }) {
         target: "_blank",
         external: true,
         cover: d.cover,
-        eyebrow: d.name,
-        title: d.label || d.name,
-        sub: d.label ? d.name : null,
+        eyebrow: d.id,
+        title: d.label || d.id,
         extraClass: "card-date",
       })
     );
@@ -704,7 +667,8 @@ function renderDatesGrid({ dates, breadcrumbParts, heading, editContext }) {
   if (isEditMode()) grid.appendChild(addCardTile(editContext.cat, editContext.yr));
 
   app.replaceChildren(
-    header(),
+    heroBanner(),
+    divider(),
     el("main", { class: "wrap" }, [
       breadcrumb(breadcrumbParts),
       el("div", { class: "section-head" }, [
@@ -723,7 +687,8 @@ async function renderDatesPage({ source, breadcrumbParts, heading, routeKey, edi
   document.title = `${heading} — ${DATA.siteName}`;
 
   app.replaceChildren(
-    header(),
+    heroBanner(),
+    divider(),
     el("main", { class: "wrap" }, [
       breadcrumb(breadcrumbParts),
       el("div", { class: "section-head" }, [el("h2", {}, heading)]),
@@ -764,7 +729,8 @@ function renderYearGridFromFile(cat, years) {
     );
   });
   app.replaceChildren(
-    header(),
+    heroBanner(),
+    divider(),
     el("main", { class: "wrap" }, [
       breadcrumb([{ label: "Home", href: "#/" }, { label: cat.name }]),
       el("div", { class: "section-head" }, [
@@ -789,7 +755,8 @@ function renderGalleryGrid(cat, entries) {
     grid.appendChild(galleryCard(entry));
   });
   app.replaceChildren(
-    header(),
+    heroBanner(),
+    divider(),
     el("main", { class: "wrap" }, [
       breadcrumb([{ label: "Home", href: "#/" }, { label: cat.name }]),
       el("div", { class: "section-head" }, [
@@ -814,7 +781,8 @@ async function renderCategory(catId) {
 
   document.title = `${cat.name} — ${DATA.siteName}`;
   app.replaceChildren(
-    header(),
+    heroBanner(),
+    divider(),
     el("main", { class: "wrap" }, [
       breadcrumb([{ label: "Home", href: "#/" }, { label: cat.name }]),
       el("div", { class: "section-head" }, [el("h2", {}, cat.name)]),
@@ -885,7 +853,8 @@ async function renderYear(catId, yearId) {
   if (cat.file) {
     document.title = `${cat.name} — ${DATA.siteName}`;
     app.replaceChildren(
-      header(),
+      heroBanner(),
+      divider(),
       el("main", { class: "wrap" }, [
         breadcrumb([
           { label: "Home", href: "#/" },
@@ -927,9 +896,43 @@ async function renderYear(catId, yearId) {
   return renderNotFound();
 }
 
+// "Gallery" nav item: a curated view showing only a subset of categories
+// (not every category — FANCAM and DM MEDIA have their own direct nav links).
+function renderGalleryHub() {
+  document.title = `Gallery — ${DATA.siteName}`;
+  const cats = GALLERY_HUB_CATEGORY_IDS
+    .map((id) => DATA.categories.find((c) => c.id === id))
+    .filter(Boolean);
+  const grid = el("div", { class: "grid" });
+  cats.forEach((cat) => {
+    grid.appendChild(
+      card({
+        href: `#/${cat.id}`,
+        cover: cat.cover,
+        eyebrow: cat.years ? `${cat.years.length} year${cat.years.length === 1 ? "" : "s"}` : undefined,
+        title: cat.name,
+        extraClass: "card-category",
+      })
+    );
+  });
+  app.replaceChildren(
+    heroBanner(),
+    divider(),
+    el("main", { class: "wrap" }, [
+      el("div", { class: "section-head" }, [
+        el("h2", {}, "Gallery"),
+        el("span", { class: "section-count" }, `${cats.length} total`),
+      ]),
+      cats.length ? grid : emptyState("No collections yet"),
+    ]),
+    footer()
+  );
+}
+
 function renderNotFound() {
   app.replaceChildren(
-    header(),
+    heroBanner(),
+    divider(),
     el("main", { class: "wrap" }, [
       breadcrumb([{ label: "Home", href: "#/" }, { label: "Not found" }]),
       emptyState("That page doesn't exist."),
@@ -942,6 +945,7 @@ function route() {
   const hash = location.hash.replace(/^#\/?/, "");
   const parts = hash.split("/").filter(Boolean);
   if (parts.length === 0) return renderHome();
+  if (parts.length === 1 && decodeURIComponent(parts[0]) === "gallery") return renderGalleryHub();
   if (parts.length === 1) return renderCategory(decodeURIComponent(parts[0]));
   return renderYear(decodeURIComponent(parts[0]), decodeURIComponent(parts[1]));
 }
