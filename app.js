@@ -100,6 +100,18 @@ function breadcrumb(parts) {
 }
 
 const ICON_SEARCH = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>`;
+const ICON_MENU = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>`;
+
+function makeSearchButton(btnClass) {
+  const btn = el("button", { class: btnClass, "aria-label": "Search", html: ICON_SEARCH });
+  btn.addEventListener("click", openSearchModal);
+  return btn;
+}
+function makeMenuButton(btnClass) {
+  const btn = el("button", { class: btnClass, "aria-label": "Menu", html: ICON_MENU });
+  btn.addEventListener("click", openMenuModal);
+  return btn;
+}
 const ICON_MAIL = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M4 6.5l8 6.5 8-6.5"/></svg>`;
 const ICON_X = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.53 3H20.8l-7.14 8.16L22 21h-6.53l-5.12-6.7L4.5 21H1.23l7.64-8.73L2 3h6.7l4.63 6.13L17.53 3zm-1.14 16.17h1.8L7.7 4.73H5.76l10.63 14.44z"/></svg>`;
 const ICON_FACEBOOK = `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.5 21v-8.1h2.72l.41-3.15H13.5V7.75c0-.91.25-1.53 1.56-1.53h1.67V3.42C16.44 3.29 15.44 3.2 14.29 3.2c-2.4 0-4.04 1.46-4.04 4.15v2.4H7.5v3.15h2.75V21h3.25z"/></svg>`;
@@ -276,6 +288,44 @@ function openGalleryModal(entry) {
   document.addEventListener("keydown", onKeyDown);
 
   showGrid();
+  document.body.appendChild(backdrop);
+}
+
+/* ---------- Menu (opens from plain-header pages — mirrors the same NAV_ITEMS
+   used in the horizontal nav on hero pages, since that nav isn't visible here) ---------- */
+
+function openMenuModal() {
+  const closeBtn = el("button", { type: "button", class: "modal-close", "aria-label": "Close" }, "×");
+  const list = el("nav", { class: "menu-list" });
+
+  function close() {
+    document.body.removeChild(backdrop);
+    document.removeEventListener("keydown", onKeyDown);
+  }
+  function onKeyDown(e) {
+    if (e.key === "Escape") close();
+  }
+
+  NAV_ITEMS.forEach((item) => {
+    const link = el("a", { href: item.href, class: "menu-list-item" }, [
+      el("img", { class: "menu-list-icon", src: item.icon, alt: "" }),
+      el("span", {}, item.label),
+    ]);
+    link.addEventListener("click", close);
+    list.appendChild(link);
+  });
+
+  const modalBox = el("div", { class: "modal-box menu-modal-box" }, [
+    closeBtn,
+    el("h3", { class: "modal-title" }, "Menu"),
+    list,
+  ]);
+  const backdrop = el("div", { class: "modal-backdrop" }, [modalBox]);
+
+  backdrop.addEventListener("click", (e) => { if (e.target === backdrop) close(); });
+  closeBtn.addEventListener("click", close);
+  document.addEventListener("keydown", onKeyDown);
+
   document.body.appendChild(backdrop);
 }
 
@@ -564,6 +614,33 @@ function openAddCardModal(cat, yr) {
   document.body.appendChild(backdrop);
 }
 
+function header() {
+  return el("header", { class: "site-header" }, [
+    el("div", { class: "wrap site-header-row" }, [
+      el("div", { class: "site-header-text" }, [
+        el("h1", { class: "site-title" }, [el("a", { href: "#/" }, DATA.siteName)]),
+        el("p", { class: "site-subtitle" }, DATA.siteSubtitle || ""),
+      ]),
+      el("div", { class: "site-header-icons" }, [
+        makeMenuButton("header-icon-btn"),
+        makeSearchButton("header-icon-btn"),
+      ]),
+    ]),
+    divider(),
+  ]);
+}
+
+// Only these top-level routes show the full hero (photo + title + horizontal nav).
+// Everything else (year/date pages, and Gallery-hub categories' own top page) uses
+// the plain header() instead.
+const HERO_TOP_LEVEL_CATEGORY_IDS = ["fancam", "media"];
+
+// Returns the array of nodes to prepend for a page: [heroBanner, divider] or [header].
+// Spread this into app.replaceChildren(...pageShell(useHero), mainEl, footer()).
+function pageShell(useHero) {
+  return useHero ? [heroBanner(), divider()] : [header()];
+}
+
 function footer() {
   const contactRow = el("div", { class: "footer-contact" }, [
     el("a", { href: CONTACT_LINKS.email, class: "footer-icon-btn", "aria-label": "Email", target: "_blank", html: ICON_MAIL }),
@@ -629,8 +706,7 @@ function renderCategoryYears(cat) {
     );
   });
   app.replaceChildren(
-    heroBanner(),
-    divider(),
+    ...pageShell(HERO_TOP_LEVEL_CATEGORY_IDS.includes(cat.id)),
     el("main", { class: "wrap" }, [
       breadcrumb([{ label: "Home", href: "#/" }, { label: cat.name }]),
       el("div", { class: "section-head" }, [
@@ -667,8 +743,7 @@ function renderDatesGrid({ dates, breadcrumbParts, heading, editContext }) {
   if (isEditMode()) grid.appendChild(addCardTile(editContext.cat, editContext.yr));
 
   app.replaceChildren(
-    heroBanner(),
-    divider(),
+    header(),
     el("main", { class: "wrap" }, [
       breadcrumb(breadcrumbParts),
       el("div", { class: "section-head" }, [
@@ -687,8 +762,7 @@ async function renderDatesPage({ source, breadcrumbParts, heading, routeKey, edi
   document.title = `${heading} — ${DATA.siteName}`;
 
   app.replaceChildren(
-    heroBanner(),
-    divider(),
+    header(),
     el("main", { class: "wrap" }, [
       breadcrumb(breadcrumbParts),
       el("div", { class: "section-head" }, [el("h2", {}, heading)]),
@@ -729,8 +803,7 @@ function renderYearGridFromFile(cat, years) {
     );
   });
   app.replaceChildren(
-    heroBanner(),
-    divider(),
+    ...pageShell(HERO_TOP_LEVEL_CATEGORY_IDS.includes(cat.id)),
     el("main", { class: "wrap" }, [
       breadcrumb([{ label: "Home", href: "#/" }, { label: cat.name }]),
       el("div", { class: "section-head" }, [
@@ -755,8 +828,7 @@ function renderGalleryGrid(cat, entries) {
     grid.appendChild(galleryCard(entry));
   });
   app.replaceChildren(
-    heroBanner(),
-    divider(),
+    ...pageShell(HERO_TOP_LEVEL_CATEGORY_IDS.includes(cat.id)),
     el("main", { class: "wrap" }, [
       breadcrumb([{ label: "Home", href: "#/" }, { label: cat.name }]),
       el("div", { class: "section-head" }, [
@@ -779,10 +851,10 @@ async function renderCategory(catId) {
 
   if (!cat.file) return renderNotFound();
 
+  const useHero = HERO_TOP_LEVEL_CATEGORY_IDS.includes(cat.id);
   document.title = `${cat.name} — ${DATA.siteName}`;
   app.replaceChildren(
-    heroBanner(),
-    divider(),
+    ...pageShell(useHero),
     el("main", { class: "wrap" }, [
       breadcrumb([{ label: "Home", href: "#/" }, { label: cat.name }]),
       el("div", { class: "section-head" }, [el("h2", {}, cat.name)]),
@@ -853,8 +925,7 @@ async function renderYear(catId, yearId) {
   if (cat.file) {
     document.title = `${cat.name} — ${DATA.siteName}`;
     app.replaceChildren(
-      heroBanner(),
-      divider(),
+      header(),
       el("main", { class: "wrap" }, [
         breadcrumb([
           { label: "Home", href: "#/" },
@@ -931,8 +1002,7 @@ function renderGalleryHub() {
 
 function renderNotFound() {
   app.replaceChildren(
-    heroBanner(),
-    divider(),
+    header(),
     el("main", { class: "wrap" }, [
       breadcrumb([{ label: "Home", href: "#/" }, { label: "Not found" }]),
       emptyState("That page doesn't exist."),
