@@ -29,7 +29,7 @@
      - date:     card dọc 2:3 (từng bộ ảnh/ngày cụ thể) */
   --frame-image-category: url("REPLACE_WITH_CATEGORY_FRAME_URL");
   --frame-image-year: url("REPLACE_WITH_YEAR_FRAME_URL");
-  --frame-image-date: url("REPLACE_WITH_DATE_FRAME_URL");
+  --frame-image-date: url("https://res.cloudinary.com/jz2djjuo/image/upload/v1789330195/w4kevpegel5ppti1ktnu.png");
 }
  
 * { box-sizing: border-box; }
@@ -468,28 +468,6 @@ footer.site-footer {
 
 .footer-copyright {
   margin: 0;
-}
-
-.footer-contact {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  flex-shrink: 0;
-}
-
-.footer-icon-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  color: var(--text-muted);
-  transition: color 0.2s ease;
-}
-
-.footer-icon-btn:hover,
-.footer-icon-btn:focus-visible {
-  color: var(--accent-bright);
 }
 
 @media (max-width: 560px) {
@@ -964,3 +942,4 @@ footer.site-footer {
   .gallery-nav-btn { width: 34px; height: 34px; font-size: 18px; }
   .gallery-note { max-width: 88%; font-size: 12.5px; padding: 8px 10px; }
 }
+
