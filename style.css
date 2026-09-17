@@ -117,7 +117,59 @@ img { display: block; max-width: 100%; }
 }
  
 .hero-icon-btn svg { width: 22px; height: 22px; }
- 
+
+/* ---------- Horizontal site nav (Garden Gate | Gallery | In Bloom | ...) ---------- */
+
+.site-nav {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+}
+
+.site-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-subtitle);
+  font-style: italic;
+  font-size: 18px;
+  color: #f2efe9;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
+  padding-bottom: 3px;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease, opacity 0.2s ease;
+  white-space: nowrap;
+}
+
+.site-nav-icon {
+  height: 22px;
+  width: auto;
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.site-nav-link:hover,
+.site-nav-link:focus-visible {
+  opacity: 0.82;
+}
+
+.site-nav-link.is-active {
+  border-bottom-color: rgba(242, 239, 233, 0.75);
+}
+
+@media (max-width: 900px) {
+  .site-nav { gap: 14px; }
+  .site-nav-link { font-size: 15px; }
+}
+
+@media (max-width: 640px) {
+  .hero-topbar { padding: 20px 20px; flex-wrap: wrap; gap: 12px; }
+  .site-nav { gap: 10px 16px; }
+  .site-nav-link { font-size: 13.5px; }
+}
+
 .hero-body {
   position: relative;
   z-index: 2;
