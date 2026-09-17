@@ -8,7 +8,7 @@
    (xem hướng dẫn lấy giá trị trong README-admin.md):
    ========================================================= */
 const CLOUD_NAME = "jz2djjuo";       // ví dụ: "dabc123xy"
-const UPLOAD_PRESET = "nyangmi"; // ví dụ: "nyang_garden_uploads"
+const UPLOAD_PRESET = "nyangmission029"; // FIXED — was accidentally "nyangmi" (same as EDIT_SECRET), which broke uploads (Cloudinary 400)
 
 /* ========================================================= */
 
@@ -69,9 +69,13 @@ function uploadFile(file) {
   formData.append("upload_preset", UPLOAD_PRESET);
 
   fetch(UPLOAD_URL, { method: "POST", body: formData })
-    .then((res) => {
-      if (!res.ok) throw new Error(`Upload thất bại (mã lỗi ${res.status})`);
-      return res.json();
+    .then(async (res) => {
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        const msg = (data && data.error && data.error.message) || `mã lỗi ${res.status}`;
+        throw new Error(msg);
+      }
+      return data;
     })
     .then((data) => markSuccess(item, data.secure_url))
     .catch((err) => markError(item, err.message));
@@ -292,9 +296,13 @@ function ccHandleFile(file) {
   formData.append("upload_preset", UPLOAD_PRESET);
 
   fetch(UPLOAD_URL, { method: "POST", body: formData })
-    .then((res) => {
-      if (!res.ok) throw new Error(`mã lỗi ${res.status}`);
-      return res.json();
+    .then(async (res) => {
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        const msg = (data && data.error && data.error.message) || `mã lỗi ${res.status}`;
+        throw new Error(msg);
+      }
+      return data;
     })
     .then((data) => {
       ccCoverUrl = data.secure_url;
