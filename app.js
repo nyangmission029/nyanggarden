@@ -125,7 +125,7 @@ const NAV_ITEMS = [
   { label: "Gallery", icon: "https://res.cloudinary.com/jz2djjuo/image/upload/v1789575245/p7qjuy7r3qsfcypcv8vg.png", href: "#/gallery", isActive: (top) => top === "gallery" || GALLERY_HUB_CATEGORY_IDS.includes(top) },
   { label: "In Bloom", icon: "https://res.cloudinary.com/jz2djjuo/image/upload/v1789575245/r1z2iorzk81ooqbk3cgc.png", href: "#/fancam", isActive: (top) => top === "fancam" },
   { label: "Nyang Grove", icon: "https://res.cloudinary.com/jz2djjuo/image/upload/v1789575245/jl5yciixbi56pvqsgjsp.png", href: "#/dm-media", isActive: (top) => top === "dm-media" },
-  { label: "Haven", icon: "https://res.cloudinary.com/jz2djjuo/image/upload/v1789575245/pgfjfhsysmmckd95q8vu.png", href: "#/", isActive: () => false, comingSoon: true },
+  { label: "Haven", icon: "https://res.cloudinary.com/jz2djjuo/image/upload/v1789575245/pgfjfhsysmmckd95q8vu.png", href: "#/haven", isActive: (top) => top === "haven" },
   { label: "Leave a note!", icon: "https://res.cloudinary.com/jz2djjuo/image/upload/v1789575245/hqfge8zczjrpt11qi88a.png", href: "#/", isActive: () => false, comingSoon: true },
 ];
 
@@ -160,10 +160,12 @@ function heroBanner() {
       siteNav(),
       searchBtn,
     ]),
-    el("div", { class: "hero-body" }, [
-      el("h1", { class: "hero-title" }, hero.title || DATA.siteName),
-      hero.subtitle ? el("p", { class: "hero-subtitle" }, hero.subtitle) : null,
-    ]),
+el("div", { class: "hero-body" }, [
+  hero.logoImage
+    ? el("img", { class: "hero-logo", src: hero.logoImage, alt: hero.title || DATA.siteName })
+    : el("h1", { class: "hero-title" }, hero.title || DATA.siteName),
+  hero.subtitle ? el("p", { class: "hero-subtitle" }, hero.subtitle) : null,
+]),
   ]);
 }
 
@@ -1002,12 +1004,141 @@ function renderNotFound() {
     footer()
   );
 }
+/* ---------- Haven: fake video-call experience ----------
+   Start screen -> xin quyền camera (popup mặc định của trình duyệt,
+   không có màn giải thích trước) -> "connecting..." giả ~2-4s ->
+   split-screen (trái = webcam thật hoặc fallback nếu bị từ chối,
+   phải = 1 video ngẫu nhiên trong pool, không lặp lại video vừa xem) ->
+   video phải hết -> dialog "Call ended" (Gọi tiếp / Exit). ---------- */
 
+// Dán link video (Cloudinary) vào đây — cần ít nhất 2 video để tránh lặp lại ngay.
+const HAVEN_VIDEOS = [
+  "https://res.cloudinary.com/YOUR_CLOUD_NAME/video/upload/YOUR_HAVEN_VIDEO_1.mp4",
+  "https://res.cloudinary.com/YOUR_CLOUD_NAME/video/upload/YOUR_HAVEN_VIDEO_2.mp4",
+];
+const HAVEN_TAGLINE = "A quiet place to call in.";
+const HAVEN_LOADING_MIN_MS = 2000;
+const HAVEN_LOADING_MAX_MS = 4000;
+
+let havenStream = null;
+let havenTimerHandle = null;
+
+function havenCleanup() {
+  if (havenTimerHandle) { clearInterval(havenTimerHandle); havenTimerHandle = null; }
+  if (havenStream) { havenStream.getTracks().forEach((t) => t.stop()); havenStream = null; }
+}
+
+function pickHavenVideo(excludeUrl) {
+  const pool = excludeUrl && HAVEN_VIDEOS.length > 1 ? HAVEN_VIDEOS.filter((v) => v !== excludeUrl) : HAVEN_VIDEOS;
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function havenFormatTime(totalSeconds) {
+  const m = Math.floor(totalSeconds / 60).toString().padStart(2, "0");
+  const s = (totalSeconds % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
+}
+
+function renderHaven() {
+  document.title = `Haven — ${DATA.siteName}`;
+  let lastVideo = null;
+  let elapsedSeconds = 0;
+
+  function showStart() {
+    const startBtn = el("button", { type: "button", class: "haven-start-btn" }, "Start");
+    startBtn.addEventListener("click", beginCall);
+    app.replaceChildren(
+      el("div", { class: "haven-shell haven-start" }, [
+        el("h1", { class: "haven-title" }, "Haven"),
+        el("p", { class: "haven-tagline" }, HAVEN_TAGLINE),
+        startBtn,
+        el("a", { href: "#/", class: "haven-back-link" }, "‹ Back to " + DATA.siteName),
+      ])
+    );
+  }
+
+  function showLoading() {
+    app.replaceChildren(
+      el("div", { class: "haven-shell haven-loading" }, [
+        el("div", { class: "haven-spinner" }),
+        el("p", { class: "haven-loading-text" }, "Connecting…"),
+      ])
+    );
+  }
+
+  async function beginCall() {
+    showLoading();
+    let permissionDenied = false;
+    try {
+      havenStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+    } catch (err) {
+      permissionDenied = true; // browser's own popup already handled the prompt/denial
+    }
+    const delay = HAVEN_LOADING_MIN_MS + Math.random() * (HAVEN_LOADING_MAX_MS - HAVEN_LOADING_MIN_MS);
+    setTimeout(() => showCall(permissionDenied), delay);
+  }
+
+  function showCall(permissionDenied) {
+    elapsedSeconds = 0;
+    const videoUrl = pickHavenVideo(lastVideo);
+    lastVideo = videoUrl;
+
+    const localEl = permissionDenied || !havenStream
+      ? el("div", { class: "haven-video-fallback" }, "📷")
+      : (() => {
+          const v = el("video", { class: "haven-video haven-video-local", autoplay: "", muted: "", playsinline: "" });
+          v.srcObject = havenStream;
+          return v;
+        })();
+
+    const remoteEl = el("video", { class: "haven-video haven-video-remote", src: videoUrl, autoplay: "", playsinline: "" });
+
+    const timerEl = el("div", { class: "haven-timer" }, "00:00");
+    havenTimerHandle = setInterval(() => {
+      elapsedSeconds += 1;
+      timerEl.textContent = havenFormatTime(elapsedSeconds);
+    }, 1000);
+
+    remoteEl.addEventListener("ended", showEnded);
+
+    app.replaceChildren(
+      el("div", { class: "haven-shell haven-call" }, [
+        timerEl,
+        el("div", { class: "haven-split" }, [
+          el("div", { class: "haven-pane haven-pane-local" }, [localEl]),
+          el("div", { class: "haven-pane haven-pane-remote" }, [remoteEl]),
+        ]),
+      ])
+    );
+  }
+
+  function showEnded() {
+    if (havenTimerHandle) { clearInterval(havenTimerHandle); havenTimerHandle = null; }
+    const againBtn = el("button", { type: "button", class: "haven-end-btn haven-end-again" }, "Make another call");
+    const exitBtn = el("button", { type: "button", class: "haven-end-btn haven-end-exit" }, "Exit");
+    againBtn.addEventListener("click", () => showCall(false));
+    exitBtn.addEventListener("click", () => { havenCleanup(); location.hash = "#/"; });
+
+    const overlay = el("div", { class: "haven-ended-overlay" }, [
+      el("div", { class: "haven-ended-box" }, [
+        el("p", { class: "haven-ended-title" }, "Call ended"),
+        el("div", { class: "haven-ended-actions" }, [againBtn, exitBtn]),
+      ]),
+    ]);
+    const callShell = app.querySelector(".haven-call");
+    if (callShell) callShell.appendChild(overlay);
+  }
+
+  showStart();
+}
 function route() {
   const hash = location.hash.replace(/^#\/?/, "");
   const parts = hash.split("/").filter(Boolean);
+  const isHaven = parts.length === 1 && decodeURIComponent(parts[0]) === "haven";
+  if (!isHaven) havenCleanup(); // tắt camera/timer nếu đang rời trang Haven
   if (parts.length === 0) return renderHome();
   if (parts.length === 1 && decodeURIComponent(parts[0]) === "gallery") return renderGalleryHub();
+  if (parts.length === 1 && isHaven) return renderHaven();
   if (parts.length === 1) return renderCategory(decodeURIComponent(parts[0]));
   return renderYear(decodeURIComponent(parts[0]), decodeURIComponent(parts[1]));
 }
