@@ -1005,18 +1005,20 @@ function renderNotFound() {
   );
 }
 /* ---------- Haven: fake video-call experience ----------
-   Start screen -> xin quyền camera (popup mặc định của trình duyệt,
-   không có màn giải thích trước) -> "connecting..." giả ~2-4s ->
-   split-screen (trái = webcam thật hoặc fallback nếu bị từ chối,
-   phải = 1 video ngẫu nhiên trong pool, không lặp lại video vừa xem) ->
-   video phải hết -> dialog "Call ended" (Gọi tiếp / Exit). ---------- */
+   Nền trang giống 1 category page bình thường (hero + nav). Vừa vào trang,
+   hiện ngay popup giả "đang gọi đến" (không có nút Start) -> Answer mới xin
+   quyền camera (popup thật của trình duyệt) -> loading giả ~2-4s ->
+   split-screen (trái = webcam/fallback, phải = video ngẫu nhiên, không lặp
+   video vừa xem) -> video hết -> dialog "Call ended" (Gọi tiếp / Exit). ---------- */
 
 // Dán link video (Cloudinary) vào đây — cần ít nhất 2 video để tránh lặp lại ngay.
 const HAVEN_VIDEOS = [
-  "https://res.cloudinary.com/YOUR_CLOUD_NAME/video/upload/YOUR_HAVEN_VIDEO_1.mp4",
-  "https://res.cloudinary.com/YOUR_CLOUD_NAME/video/upload/YOUR_HAVEN_VIDEO_2.mp4",
+  "https://res.cloudinary.com/jz2djjuo/video/upload/v1789711503/iyxtkmqfaery78ozpowg.mp4",
+  "https://res.cloudinary.com/jz2djjuo/video/upload/v1789711470/xjbqaijomp0szdywasdc.mp4",
 ];
 const HAVEN_TAGLINE = "A quiet place to call in.";
+const HAVEN_CALLER_NAME = "Jungwon";
+const HAVEN_CALLER_AVATAR = ""; // link ảnh avatar tròn, để trống thì hiện icon mặc định
 const HAVEN_LOADING_MIN_MS = 2000;
 const HAVEN_LOADING_MAX_MS = 4000;
 
@@ -1026,6 +1028,8 @@ let havenTimerHandle = null;
 function havenCleanup() {
   if (havenTimerHandle) { clearInterval(havenTimerHandle); havenTimerHandle = null; }
   if (havenStream) { havenStream.getTracks().forEach((t) => t.stop()); havenStream = null; }
+  const overlay = document.querySelector(".haven-overlay-root");
+  if (overlay) overlay.remove();
 }
 
 function pickHavenVideo(excludeUrl) {
@@ -1039,97 +1043,123 @@ function havenFormatTime(totalSeconds) {
   return `${m}:${s}`;
 }
 
+// One shared fixed, fullscreen root that every Haven overlay (incoming call,
+// loading, split-call) replaces the contents of — keeps only one at a time.
+function havenOverlayRoot() {
+  let root = document.querySelector(".haven-overlay-root");
+  if (!root) {
+    root = el("div", { class: "haven-overlay-root" });
+    document.body.appendChild(root);
+  }
+  return root;
+}
+
 function renderHaven() {
   document.title = `Haven — ${DATA.siteName}`;
-  let lastVideo = null;
+
+  // Backdrop: looks like a normal page (same hero/nav treatment as FANCAM).
+  app.replaceChildren(
+    ...pageShell(true),
+    el("main", { class: "wrap" }, [
+      el("div", { class: "section-head" }, [el("h2", {}, "Haven")]),
+      el("p", { class: "haven-intro-text" }, HAVEN_TAGLINE),
+    ]),
+    footer()
+  );
+
+  showIncomingCall();
+}
+
+function showIncomingCall() {
+  const root = havenOverlayRoot();
+
+  const declineBtn = el("button", { type: "button", class: "haven-call-btn haven-call-decline", "aria-label": "Decline" }, "✕");
+  const answerBtn = el("button", { type: "button", class: "haven-call-btn haven-call-answer", "aria-label": "Answer" }, "✓");
+
+  declineBtn.addEventListener("click", () => { havenCleanup(); location.hash = "#/"; });
+  answerBtn.addEventListener("click", beginCall);
+
+  root.replaceChildren(
+    el("div", { class: "haven-incoming" }, [
+      el("div", { class: "haven-avatar" }, HAVEN_CALLER_AVATAR ? el("img", { src: HAVEN_CALLER_AVATAR, alt: "" }) : "🐱"),
+      el("p", { class: "haven-calling-name" }, HAVEN_CALLER_NAME),
+      el("p", { class: "haven-calling-text" }, "is calling…"),
+      el("div", { class: "haven-call-actions" }, [
+        el("div", { class: "haven-call-action" }, [declineBtn, el("span", {}, "Decline")]),
+        el("div", { class: "haven-call-action" }, [answerBtn, el("span", {}, "Answer")]),
+      ]),
+    ])
+  );
+}
+
+async function beginCall() {
+  const root = havenOverlayRoot();
+  root.replaceChildren(
+    el("div", { class: "haven-shell haven-loading" }, [
+      el("div", { class: "haven-spinner" }),
+      el("p", { class: "haven-loading-text" }, "Connecting…"),
+    ])
+  );
+
+  let permissionDenied = false;
+  try {
+    havenStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+  } catch (err) {
+    permissionDenied = true; // browser's own popup already handled the prompt/denial
+  }
+  const delay = HAVEN_LOADING_MIN_MS + Math.random() * (HAVEN_LOADING_MAX_MS - HAVEN_LOADING_MIN_MS);
+  setTimeout(() => showCall(permissionDenied, null), delay);
+}
+
+function showCall(permissionDenied, lastVideo) {
+  const root = havenOverlayRoot();
+  const videoUrl = pickHavenVideo(lastVideo);
   let elapsedSeconds = 0;
 
-  function showStart() {
-    const startBtn = el("button", { type: "button", class: "haven-start-btn" }, "Start");
-    startBtn.addEventListener("click", beginCall);
-    app.replaceChildren(
-      el("div", { class: "haven-shell haven-start" }, [
-        el("h1", { class: "haven-title" }, "Haven"),
-        el("p", { class: "haven-tagline" }, HAVEN_TAGLINE),
-        startBtn,
-        el("a", { href: "#/", class: "haven-back-link" }, "‹ Back to " + DATA.siteName),
-      ])
-    );
-  }
+  const localEl = permissionDenied || !havenStream
+    ? el("div", { class: "haven-video-fallback" }, "📷")
+    : (() => {
+        const v = el("video", { class: "haven-video haven-video-local", autoplay: "", muted: "", playsinline: "" });
+        v.srcObject = havenStream;
+        return v;
+      })();
 
-  function showLoading() {
-    app.replaceChildren(
-      el("div", { class: "haven-shell haven-loading" }, [
-        el("div", { class: "haven-spinner" }),
-        el("p", { class: "haven-loading-text" }, "Connecting…"),
-      ])
-    );
-  }
+  const remoteEl = el("video", { class: "haven-video haven-video-remote", src: videoUrl, autoplay: "", playsinline: "" });
 
-  async function beginCall() {
-    showLoading();
-    let permissionDenied = false;
-    try {
-      havenStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
-    } catch (err) {
-      permissionDenied = true; // browser's own popup already handled the prompt/denial
-    }
-    const delay = HAVEN_LOADING_MIN_MS + Math.random() * (HAVEN_LOADING_MAX_MS - HAVEN_LOADING_MIN_MS);
-    setTimeout(() => showCall(permissionDenied), delay);
-  }
+  const timerEl = el("div", { class: "haven-timer" }, "00:00");
+  havenTimerHandle = setInterval(() => {
+    elapsedSeconds += 1;
+    timerEl.textContent = havenFormatTime(elapsedSeconds);
+  }, 1000);
 
-  function showCall(permissionDenied) {
-    elapsedSeconds = 0;
-    const videoUrl = pickHavenVideo(lastVideo);
-    lastVideo = videoUrl;
+  remoteEl.addEventListener("ended", () => showEnded(videoUrl));
 
-    const localEl = permissionDenied || !havenStream
-      ? el("div", { class: "haven-video-fallback" }, "📷")
-      : (() => {
-          const v = el("video", { class: "haven-video haven-video-local", autoplay: "", muted: "", playsinline: "" });
-          v.srcObject = havenStream;
-          return v;
-        })();
-
-    const remoteEl = el("video", { class: "haven-video haven-video-remote", src: videoUrl, autoplay: "", playsinline: "" });
-
-    const timerEl = el("div", { class: "haven-timer" }, "00:00");
-    havenTimerHandle = setInterval(() => {
-      elapsedSeconds += 1;
-      timerEl.textContent = havenFormatTime(elapsedSeconds);
-    }, 1000);
-
-    remoteEl.addEventListener("ended", showEnded);
-
-    app.replaceChildren(
-      el("div", { class: "haven-shell haven-call" }, [
-        timerEl,
-        el("div", { class: "haven-split" }, [
-          el("div", { class: "haven-pane haven-pane-local" }, [localEl]),
-          el("div", { class: "haven-pane haven-pane-remote" }, [remoteEl]),
-        ]),
-      ])
-    );
-  }
-
-  function showEnded() {
-    if (havenTimerHandle) { clearInterval(havenTimerHandle); havenTimerHandle = null; }
-    const againBtn = el("button", { type: "button", class: "haven-end-btn haven-end-again" }, "Make another call");
-    const exitBtn = el("button", { type: "button", class: "haven-end-btn haven-end-exit" }, "Exit");
-    againBtn.addEventListener("click", () => showCall(false));
-    exitBtn.addEventListener("click", () => { havenCleanup(); location.hash = "#/"; });
-
-    const overlay = el("div", { class: "haven-ended-overlay" }, [
-      el("div", { class: "haven-ended-box" }, [
-        el("p", { class: "haven-ended-title" }, "Call ended"),
-        el("div", { class: "haven-ended-actions" }, [againBtn, exitBtn]),
+  root.replaceChildren(
+    el("div", { class: "haven-shell haven-call" }, [
+      timerEl,
+      el("div", { class: "haven-split" }, [
+        el("div", { class: "haven-pane haven-pane-local" }, [localEl]),
+        el("div", { class: "haven-pane haven-pane-remote" }, [remoteEl]),
       ]),
-    ]);
-    const callShell = app.querySelector(".haven-call");
-    if (callShell) callShell.appendChild(overlay);
-  }
+    ])
+  );
+}
 
-  showStart();
+function showEnded(lastVideo) {
+  if (havenTimerHandle) { clearInterval(havenTimerHandle); havenTimerHandle = null; }
+  const againBtn = el("button", { type: "button", class: "haven-end-btn haven-end-again" }, "Make another call");
+  const exitBtn = el("button", { type: "button", class: "haven-end-btn haven-end-exit" }, "Exit");
+  againBtn.addEventListener("click", () => showCall(!havenStream, lastVideo));
+  exitBtn.addEventListener("click", () => { havenCleanup(); location.hash = "#/"; });
+
+  const overlay = el("div", { class: "haven-ended-overlay" }, [
+    el("div", { class: "haven-ended-box" }, [
+      el("p", { class: "haven-ended-title" }, "Call ended"),
+      el("div", { class: "haven-ended-actions" }, [againBtn, exitBtn]),
+    ]),
+  ]);
+  const callShell = document.querySelector(".haven-call");
+  if (callShell) callShell.appendChild(overlay);
 }
 function route() {
   const hash = location.hash.replace(/^#\/?/, "");
