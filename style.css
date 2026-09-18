@@ -201,7 +201,7 @@ img { display: block; max-width: 100%; }
 }
 
 .hero-logo {
-  max-width: min(60%, 320px);
+  max-width: min(60%, 480px);
   width: 100%;
   height: auto;
   margin: 0 auto;
@@ -957,56 +957,113 @@ footer.site-footer {
 
 /* ---------- HAVEN ---------- */
 
+.haven-intro-text {
+  font-family: var(--font-subtitle);
+  font-style: italic;
+  color: var(--text-muted);
+  font-size: 16px;
+  margin: -10px 0 40px;
+}
+
+.haven-overlay-root {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+}
+
+/* Incoming call */
+
+.haven-incoming {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 8, 6, 0.86);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.haven-avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  animation: haven-pulse 1.6s ease-in-out infinite;
+}
+.haven-avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+@keyframes haven-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(164, 189, 114, 0.45); }
+  50% { box-shadow: 0 0 0 14px rgba(164, 189, 114, 0); }
+}
+
+.haven-calling-name {
+  font-family: var(--font-display);
+  font-size: 30px;
+  color: #f2efe9;
+  margin: 0;
+}
+
+.haven-calling-text {
+  font-family: var(--font-subtitle);
+  font-style: italic;
+  color: var(--text-muted);
+  font-size: 15px;
+  margin: 0 0 30px;
+}
+
+.haven-call-actions {
+  display: flex;
+  gap: 48px;
+}
+
+.haven-call-action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.haven-call-btn {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+.haven-call-btn:hover { opacity: 0.85; }
+.haven-call-decline { background: #b5453f; color: #fff; }
+.haven-call-answer { background: #5a9b57; color: #fff; }
+
+/* Loading + split-screen call (fullscreen) */
+
 .haven-shell {
-  min-height: 100vh;
+  position: fixed;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   background: var(--bg);
   text-align: center;
-  padding: 24px;
   gap: 16px;
 }
-
-.haven-title {
-  font-family: var(--font-display);
-  font-size: clamp(40px, 8vw, 88px);
-  color: var(--text);
-  margin: 0;
-}
-
-.haven-tagline {
-  font-family: var(--font-subtitle);
-  font-style: italic;
-  color: var(--text-muted);
-  font-size: 17px;
-  margin: 0 0 12px;
-}
-
-.haven-start-btn {
-  font-family: var(--font-mono);
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  font-size: 14px;
-  padding: 14px 44px;
-  background: var(--accent);
-  color: var(--bg);
-  border: none;
-  border-radius: var(--radius);
-  cursor: pointer;
-  transition: opacity 0.2s ease;
-}
-.haven-start-btn:hover { opacity: 0.85; }
-
-.haven-back-link {
-  margin-top: 18px;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  letter-spacing: 0.06em;
-  color: var(--text-muted);
-}
-.haven-back-link:hover { color: var(--accent-bright); }
 
 .haven-spinner {
   width: 46px;
@@ -1026,7 +1083,7 @@ footer.site-footer {
   text-transform: uppercase;
 }
 
-.haven-call { padding: 0; gap: 0; position: relative; }
+.haven-call { padding: 0; gap: 0; }
 
 .haven-timer {
   position: absolute;
@@ -1045,7 +1102,7 @@ footer.site-footer {
 
 .haven-split {
   width: 100%;
-  height: 100vh;
+  height: 100%;
   display: flex;
 }
 
@@ -1062,7 +1119,7 @@ footer.site-footer {
   object-fit: cover;
 }
 
-.haven-pane-local .haven-video-local { transform: scaleX(-1); } /* gương selfie, tự nhiên hơn */
+.haven-pane-local .haven-video-local { transform: scaleX(-1); }
 
 .haven-video-fallback {
   width: 100%;
@@ -1126,4 +1183,5 @@ footer.site-footer {
 
 @media (max-width: 700px) {
   .haven-split { flex-direction: column; }
+  .haven-call-actions { gap: 32px; }
 }
