@@ -199,6 +199,14 @@ img { display: block; max-width: 100%; }
   margin: 0;
   text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35);
 }
+
+.hero-logo {
+  max-width: min(90%, 640px);
+  width: 100%;
+  height: auto;
+  margin: 0 auto;
+  filter: drop-shadow(0 2px 20px rgba(0, 0, 0, 0.35));
+}
  
 .hero-subtitle {
   font-family: var(--font-subtitle);
@@ -943,3 +951,175 @@ footer.site-footer {
   .gallery-note { max-width: 88%; font-size: 12.5px; padding: 8px 10px; }
 }
 
+/* ---------- HAVEN ---------- */
+
+.haven-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  text-align: center;
+  padding: 24px;
+  gap: 16px;
+}
+
+.haven-title {
+  font-family: var(--font-display);
+  font-size: clamp(40px, 8vw, 88px);
+  color: var(--text);
+  margin: 0;
+}
+
+.haven-tagline {
+  font-family: var(--font-subtitle);
+  font-style: italic;
+  color: var(--text-muted);
+  font-size: 17px;
+  margin: 0 0 12px;
+}
+
+.haven-start-btn {
+  font-family: var(--font-mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-size: 14px;
+  padding: 14px 44px;
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+.haven-start-btn:hover { opacity: 0.85; }
+
+.haven-back-link {
+  margin-top: 18px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+.haven-back-link:hover { color: var(--accent-bright); }
+
+.haven-spinner {
+  width: 46px;
+  height: 46px;
+  border: 3px solid var(--line);
+  border-top-color: var(--accent-bright);
+  border-radius: 50%;
+  animation: haven-spin 0.9s linear infinite;
+}
+@keyframes haven-spin { to { transform: rotate(360deg); } }
+
+.haven-loading-text {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.haven-call { padding: 0; gap: 0; position: relative; }
+
+.haven-timer {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: #f2efe9;
+  background: rgba(5, 8, 6, 0.55);
+  padding: 6px 16px;
+  border-radius: var(--radius);
+}
+
+.haven-split {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+}
+
+.haven-pane {
+  flex: 1;
+  position: relative;
+  background: #05100c;
+  overflow: hidden;
+}
+
+.haven-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.haven-pane-local .haven-video-local { transform: scaleX(-1); } /* gương selfie, tự nhiên hơn */
+
+.haven-video-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+}
+
+.haven-ended-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 8, 6, 0.78);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.haven-ended-box {
+  background: var(--bg-elevated);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 32px 40px;
+  text-align: center;
+}
+
+.haven-ended-title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  color: var(--text);
+  margin: 0 0 20px;
+}
+
+.haven-ended-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.haven-end-btn {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+.haven-end-again { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+.haven-end-again:hover { opacity: 0.88; }
+.haven-end-exit:hover { border-color: var(--accent-bright); color: var(--accent-bright); }
+
+@media (max-width: 700px) {
+  .haven-split { flex-direction: column; }
+}
