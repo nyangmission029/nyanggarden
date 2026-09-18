@@ -1006,12 +1006,10 @@ function renderNotFound() {
 }
 /* ---------- Haven: fake video-call experience ----------
    Nền trang giống 1 category page bình thường (hero + nav). Vừa vào trang,
-   hiện ngay popup giả "đang gọi đến" (không có nút Start) -> Answer mới xin
-   quyền camera (popup thật của trình duyệt) -> loading giả ~2-4s ->
-   split-screen (trái = webcam/fallback, phải = video ngẫu nhiên, không lặp
-   video vừa xem) -> video hết -> dialog "Call ended" (Gọi tiếp / Exit). ---------- */
+   hiện popup "đang gọi đến" toàn màn hình -> Answer mới xin quyền camera ->
+   cuộc gọi hiện trong 1 CỬA SỔ nhỏ nổi giữa trang (không chiếm hết màn
+   hình), có thanh tiêu đề + nút đóng, nút "gọi khác" có bước connecting lại. ---------- */
 
-// Dán link video (Cloudinary) vào đây — cần ít nhất 2 video để tránh lặp lại ngay.
 const HAVEN_VIDEOS = [
   "https://res.cloudinary.com/jz2djjuo/video/upload/v1789711503/iyxtkmqfaery78ozpowg.mp4",
   "https://res.cloudinary.com/jz2djjuo/video/upload/v1789711470/xjbqaijomp0szdywasdc.mp4",
@@ -1019,11 +1017,12 @@ const HAVEN_VIDEOS = [
 const HAVEN_TAGLINE = "A quiet place to call in.";
 const HAVEN_CALLER_NAME = "Jungwon";
 const HAVEN_CALLER_AVATAR = ""; // link ảnh avatar tròn, để trống thì hiện icon mặc định
-const HAVEN_LOADING_MIN_MS = 2000;
-const HAVEN_LOADING_MAX_MS = 4000;
+const HAVEN_LOADING_MIN_MS = 1200;
+const HAVEN_LOADING_MAX_MS = 2200;
 
 let havenStream = null;
 let havenTimerHandle = null;
+let havenPermissionDenied = false;
 
 function havenCleanup() {
   if (havenTimerHandle) { clearInterval(havenTimerHandle); havenTimerHandle = null; }
@@ -1043,8 +1042,6 @@ function havenFormatTime(totalSeconds) {
   return `${m}:${s}`;
 }
 
-// One shared fixed, fullscreen root that every Haven overlay (incoming call,
-// loading, split-call) replaces the contents of — keeps only one at a time.
 function havenOverlayRoot() {
   let root = document.querySelector(".haven-overlay-root");
   if (!root) {
@@ -1056,8 +1053,6 @@ function havenOverlayRoot() {
 
 function renderHaven() {
   document.title = `Haven — ${DATA.siteName}`;
-
-  // Backdrop: looks like a normal page (same hero/nav treatment as FANCAM).
   app.replaceChildren(
     ...pageShell(true),
     el("main", { class: "wrap" }, [
@@ -1066,16 +1061,13 @@ function renderHaven() {
     ]),
     footer()
   );
-
   showIncomingCall();
 }
 
 function showIncomingCall() {
   const root = havenOverlayRoot();
-
   const declineBtn = el("button", { type: "button", class: "haven-call-btn haven-call-decline", "aria-label": "Decline" }, "✕");
   const answerBtn = el("button", { type: "button", class: "haven-call-btn haven-call-answer", "aria-label": "Answer" }, "✓");
-
   declineBtn.addEventListener("click", () => { havenCleanup(); location.hash = "#/"; });
   answerBtn.addEventListener("click", beginCall);
 
@@ -1092,31 +1084,57 @@ function showIncomingCall() {
   );
 }
 
+// Wraps any body content in the site-styled "call window" (title bar + close).
+function havenWindowShell(bodyNode) {
+  const closeBtn = el("button", { type: "button", class: "haven-window-close", "aria-label": "Đóng" }, "✕");
+  closeBtn.addEventListener("click", () => { havenCleanup(); location.hash = "#/"; });
+  return el("div", { class: "haven-window-backdrop" }, [
+    el("div", { class: "haven-window" }, [
+      el("div", { class: "haven-window-titlebar" }, [
+        el("span", { class: "haven-window-title" }, `🌙 ${DATA.siteName.toLowerCase()}.haven`),
+        closeBtn,
+      ]),
+      el("div", { class: "haven-window-body" }, [bodyNode]),
+    ]),
+  ]);
+}
+
+function havenLoadingBody() {
+  return el("div", { class: "haven-window-loading" }, [
+    el("div", { class: "haven-spinner" }),
+    el("p", { class: "haven-loading-text" }, "Connecting…"),
+  ]);
+}
+
 async function beginCall() {
   const root = havenOverlayRoot();
-  root.replaceChildren(
-    el("div", { class: "haven-shell haven-loading" }, [
-      el("div", { class: "haven-spinner" }),
-      el("p", { class: "haven-loading-text" }, "Connecting…"),
-    ])
-  );
+  root.replaceChildren(havenWindowShell(havenLoadingBody()));
 
-  let permissionDenied = false;
+  havenPermissionDenied = false;
   try {
     havenStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
   } catch (err) {
-    permissionDenied = true; // browser's own popup already handled the prompt/denial
+    havenPermissionDenied = true; // browser's own popup already handled the prompt/denial
   }
   const delay = HAVEN_LOADING_MIN_MS + Math.random() * (HAVEN_LOADING_MAX_MS - HAVEN_LOADING_MIN_MS);
-  setTimeout(() => showCall(permissionDenied, null), delay);
+  setTimeout(() => showCall(null), delay);
 }
 
-function showCall(permissionDenied, lastVideo) {
+// "Make another call": short reconnect delay, reuses the already-granted camera stream.
+function reconnectCall(lastVideo) {
+  if (havenTimerHandle) { clearInterval(havenTimerHandle); havenTimerHandle = null; }
+  const root = havenOverlayRoot();
+  root.replaceChildren(havenWindowShell(havenLoadingBody()));
+  const delay = HAVEN_LOADING_MIN_MS + Math.random() * (HAVEN_LOADING_MAX_MS - HAVEN_LOADING_MIN_MS);
+  setTimeout(() => showCall(lastVideo), delay);
+}
+
+function showCall(lastVideo) {
   const root = havenOverlayRoot();
   const videoUrl = pickHavenVideo(lastVideo);
   let elapsedSeconds = 0;
 
-  const localEl = permissionDenied || !havenStream
+  const localEl = havenPermissionDenied || !havenStream
     ? el("div", { class: "haven-video-fallback" }, "📷")
     : (() => {
         const v = el("video", { class: "haven-video haven-video-local", autoplay: "", muted: "", playsinline: "" });
@@ -1134,22 +1152,26 @@ function showCall(permissionDenied, lastVideo) {
 
   remoteEl.addEventListener("ended", () => showEnded(videoUrl));
 
-  root.replaceChildren(
-    el("div", { class: "haven-shell haven-call" }, [
-      timerEl,
-      el("div", { class: "haven-split" }, [
-        el("div", { class: "haven-pane haven-pane-local" }, [localEl]),
-        el("div", { class: "haven-pane haven-pane-remote" }, [remoteEl]),
-      ]),
-    ])
-  );
+  const nextBtn = el("button", { type: "button", class: "haven-window-ctrl-btn", "aria-label": "Gọi khác", title: "Gọi khác" }, "⟳");
+  nextBtn.addEventListener("click", () => reconnectCall(videoUrl));
+
+  const body = el("div", { class: "haven-window-call-body" }, [
+    timerEl,
+    el("div", { class: "haven-split" }, [
+      el("div", { class: "haven-pane haven-pane-local" }, [localEl]),
+      el("div", { class: "haven-pane haven-pane-remote" }, [remoteEl]),
+    ]),
+    el("div", { class: "haven-window-controls" }, [nextBtn]),
+  ]);
+
+  root.replaceChildren(havenWindowShell(body));
 }
 
 function showEnded(lastVideo) {
   if (havenTimerHandle) { clearInterval(havenTimerHandle); havenTimerHandle = null; }
   const againBtn = el("button", { type: "button", class: "haven-end-btn haven-end-again" }, "Make another call");
   const exitBtn = el("button", { type: "button", class: "haven-end-btn haven-end-exit" }, "Exit");
-  againBtn.addEventListener("click", () => showCall(!havenStream, lastVideo));
+  againBtn.addEventListener("click", () => reconnectCall(lastVideo));
   exitBtn.addEventListener("click", () => { havenCleanup(); location.hash = "#/"; });
 
   const overlay = el("div", { class: "haven-ended-overlay" }, [
@@ -1158,8 +1180,8 @@ function showEnded(lastVideo) {
       el("div", { class: "haven-ended-actions" }, [againBtn, exitBtn]),
     ]),
   ]);
-  const callShell = document.querySelector(".haven-call");
-  if (callShell) callShell.appendChild(overlay);
+  const bodyEl = document.querySelector(".haven-window-call-body");
+  if (bodyEl) bodyEl.appendChild(overlay);
 }
 function route() {
   const hash = location.hash.replace(/^#\/?/, "");
