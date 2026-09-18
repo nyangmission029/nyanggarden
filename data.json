@@ -2,9 +2,11 @@
   "siteName": "NYANG GARDEN",
   "siteSubtitle": "The Nyang Mission for World's Cutest Nyangie",
   "hero": {
-    "image": "https://res.cloudinary.com/jz2djjuo/image/upload/v1787976529/wjvqpvrprmzxormq6zqs.jpg",
-    "title": "NYANG GARDEN",
-    "subtitle": "The Nyang Mission for World's Cutest Nyangie"
+  "image": "https://res.cloudinary.com/jz2djjuo/image/upload/v1787976529/wjvqpvrprmzxormq6zqs.jpg",
+  "title": "NYANG GARDEN",
+  "subtitle": "The Nyang Mission for World's Cutest Nyangie",
+  "logoImage": "https://res.cloudinary.com/jz2djjuo/image/upload/v1789711238/fxnyveehcg56pxwlglmv.png"
+}
   },
   "categories": [
     {
