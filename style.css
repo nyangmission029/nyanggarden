@@ -967,7 +967,7 @@ footer.site-footer {
 
 .haven-overlay-root { position: fixed; inset: 0; z-index: 90; }
 
-/* Incoming call — fullscreen, giữ nguyên kiểu cũ */
+/* Incoming call — toàn màn hình */
 
 .haven-incoming {
   position: fixed;
@@ -1011,7 +1011,7 @@ footer.site-footer {
 .haven-call-decline { background: #b5453f; color: #fff; }
 .haven-call-answer { background: #5a9b57; color: #fff; }
 
-/* Call window — cửa sổ nổi giữa trang, không chiếm hết màn hình */
+/* Call window — nổi giữa trang, connecting hiện ngay trong khung này */
 
 .haven-window-backdrop {
   position: fixed;
@@ -1031,7 +1031,15 @@ footer.site-footer {
   border-radius: var(--radius);
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  transition: max-width 0.25s ease;
 }
+
+/* Phóng to: vẫn có padding 24px của backdrop nên viền xanh của cửa sổ luôn hiện, chỉ to hết cỡ bên trong phần đó */
+.haven-window.is-maximized { max-width: 100%; width: 100%; height: 100%; display: flex; flex-direction: column; }
+.haven-window.is-maximized .haven-window-body,
+.haven-window.is-maximized .haven-window-loading,
+.haven-window.is-maximized .haven-window-call-body,
+.haven-window.is-maximized .haven-split { flex: 1; height: 100%; }
 
 .haven-window-titlebar {
   display: flex;
@@ -1049,18 +1057,18 @@ footer.site-footer {
   color: var(--text-muted);
 }
 
-.haven-window-close {
+.haven-window-maximize {
   background: transparent;
   border: none;
   color: var(--text-muted);
-  font-size: 15px;
+  font-size: 16px;
   cursor: pointer;
   width: 26px;
   height: 26px;
   border-radius: var(--radius);
   transition: color 0.2s ease, background 0.2s ease;
 }
-.haven-window-close:hover { color: #f2efe9; background: #b5453f; }
+.haven-window-maximize:hover { color: var(--accent-bright); background: var(--bg-elevated); }
 
 .haven-window-body { position: relative; }
 
@@ -1109,10 +1117,8 @@ footer.site-footer {
 }
 
 .haven-split { display: flex; height: 340px; }
-
 .haven-pane { flex: 1; position: relative; background: #05100c; overflow: hidden; }
 .haven-pane + .haven-pane { border-left: 1px solid var(--line); }
-
 .haven-video { width: 100%; height: 100%; object-fit: cover; }
 .haven-pane-local .haven-video-local { transform: scaleX(-1); }
 
@@ -1131,24 +1137,22 @@ footer.site-footer {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
   padding: 12px;
   border-top: 1px solid var(--line);
   background: var(--bg);
 }
 
 .haven-window-ctrl-btn {
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   border-radius: 50%;
-  border: 1px solid var(--line);
-  background: transparent;
-  color: var(--text);
-  font-size: 16px;
+  border: none;
+  font-size: 18px;
   cursor: pointer;
-  transition: border-color 0.2s ease, color 0.2s ease;
+  transition: opacity 0.2s ease;
 }
-.haven-window-ctrl-btn:hover { border-color: var(--accent-bright); color: var(--accent-bright); }
+.haven-hangup-btn { background: #b5453f; color: #fff; transform: rotate(135deg); }
+.haven-hangup-btn:hover { opacity: 0.85; }
 
 .haven-ended-overlay {
   position: absolute;
