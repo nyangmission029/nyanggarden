@@ -1006,29 +1006,58 @@ function renderNotFound() {
 }
 /* ---------- Haven: fake video-call experience ----------
    Nền trang giống 1 category page bình thường (hero + nav). Vừa vào trang,
-   hiện popup "đang gọi đến" toàn màn hình -> Answer mới xin quyền camera ->
-   cuộc gọi hiện trong 1 CỬA SỔ nhỏ nổi giữa trang (không chiếm hết màn
-   hình), có thanh tiêu đề + nút đóng, nút "gọi khác" có bước connecting lại. ---------- */
+   hiện popup "đang gọi đến" toàn màn hình (có chuông reo lặp lại) -> Answer
+   xin quyền camera -> "Connecting..." hiện ngay trong khung cửa sổ -> cửa
+   sổ call nổi giữa trang (có nút phóng to, giữ nguyên viền xanh của cửa sổ)
+   + nút ngắt máy -> video hết -> dialog Call ended (Gọi tiếp / Exit).
+   Có âm thanh cho: chuông đang gọi, lúc connecting, và lúc cuộc gọi kết
+   thúc (kể cả khi tự bấm ngắt máy). ---------- */
 
 const HAVEN_VIDEOS = [
-  "https://res.cloudinary.com/jz2djjuo/video/upload/v1789711503/iyxtkmqfaery78ozpowg.mp4",
-  "https://res.cloudinary.com/jz2djjuo/video/upload/v1789711470/xjbqaijomp0szdywasdc.mp4",
+  "https://res.cloudinary.com/YOUR_CLOUD_NAME/video/upload/YOUR_HAVEN_VIDEO_1.mp4",
+  "https://res.cloudinary.com/YOUR_CLOUD_NAME/video/upload/YOUR_HAVEN_VIDEO_2.mp4",
 ];
 const HAVEN_TAGLINE = "A quiet place to call in.";
 const HAVEN_CALLER_NAME = "Jungwon";
 const HAVEN_CALLER_AVATAR = ""; // link ảnh avatar tròn, để trống thì hiện icon mặc định
-const HAVEN_LOADING_MIN_MS = 1200;
-const HAVEN_LOADING_MAX_MS = 2200;
+const HAVEN_LOADING_MIN_MS = 5200;
+const HAVEN_LOADING_MAX_MS = 6200;
+
+// Dán link âm thanh (Cloudinary) vào 3 dòng dưới. Để trống/giữ "YOUR_" thì im lặng, không lỗi.
+const HAVEN_SOUND_RINGING = "https://res.cloudinary.com/YOUR_CLOUD_NAME/video/upload/YOUR_RINGING_SOUND.mp3";
+const HAVEN_SOUND_CONNECTING = "https://res.cloudinary.com/YOUR_CLOUD_NAME/video/upload/YOUR_CONNECTING_SOUND.mp3";
+const HAVEN_SOUND_CALL_END = "https://res.cloudinary.com/YOUR_CLOUD_NAME/video/upload/YOUR_CALL_END_SOUND.mp3";
 
 let havenStream = null;
 let havenTimerHandle = null;
 let havenPermissionDenied = false;
+let havenRingingAudio = null;
+
+function playHavenSound(url, loop = false) {
+  if (!url || url.includes("YOUR_")) return null;
+  const audio = new Audio(url);
+  audio.volume = 0.5;
+  audio.loop = loop;
+  audio.play().catch(() => {});
+  return audio;
+}
+
+function stopHavenRinging() {
+  if (havenRingingAudio) { havenRingingAudio.pause(); havenRingingAudio = null; }
+}
 
 function havenCleanup() {
+  stopHavenRinging();
   if (havenTimerHandle) { clearInterval(havenTimerHandle); havenTimerHandle = null; }
   if (havenStream) { havenStream.getTracks().forEach((t) => t.stop()); havenStream = null; }
   const overlay = document.querySelector(".haven-overlay-root");
   if (overlay) overlay.remove();
+}
+
+function havenHangUp() {
+  playHavenSound(HAVEN_SOUND_CALL_END);
+  havenCleanup();
+  location.hash = "#/";
 }
 
 function pickHavenVideo(excludeUrl) {
@@ -1066,10 +1095,12 @@ function renderHaven() {
 
 function showIncomingCall() {
   const root = havenOverlayRoot();
+  havenRingingAudio = playHavenSound(HAVEN_SOUND_RINGING, true);
+
   const declineBtn = el("button", { type: "button", class: "haven-call-btn haven-call-decline", "aria-label": "Decline" }, "✕");
   const answerBtn = el("button", { type: "button", class: "haven-call-btn haven-call-answer", "aria-label": "Answer" }, "✓");
-  declineBtn.addEventListener("click", () => { havenCleanup(); location.hash = "#/"; });
-  answerBtn.addEventListener("click", beginCall);
+  declineBtn.addEventListener("click", () => { stopHavenRinging(); havenCleanup(); location.hash = "#/"; });
+  answerBtn.addEventListener("click", () => { stopHavenRinging(); beginCall(); });
 
   root.replaceChildren(
     el("div", { class: "haven-incoming" }, [
@@ -1084,19 +1115,23 @@ function showIncomingCall() {
   );
 }
 
-// Wraps any body content in the site-styled "call window" (title bar + close).
+// Site-styled "call window": titlebar (maximize toggle only) + body.
 function havenWindowShell(bodyNode) {
-  const closeBtn = el("button", { type: "button", class: "haven-window-close", "aria-label": "Đóng" }, "✕");
-  closeBtn.addEventListener("click", () => { havenCleanup(); location.hash = "#/"; });
-  return el("div", { class: "haven-window-backdrop" }, [
-    el("div", { class: "haven-window" }, [
-      el("div", { class: "haven-window-titlebar" }, [
-        el("span", { class: "haven-window-title" }, `🌙 ${DATA.siteName.toLowerCase()}.haven`),
-        closeBtn,
-      ]),
-      el("div", { class: "haven-window-body" }, [bodyNode]),
+  const maximizeBtn = el("button", { type: "button", class: "haven-window-maximize", "aria-label": "Phóng to" }, "⛶");
+  const windowEl = el("div", { class: "haven-window" }, [
+    el("div", { class: "haven-window-titlebar" }, [
+      el("span", { class: "haven-window-title" }, `🌙 ${DATA.siteName.toLowerCase()}.haven`),
+      maximizeBtn,
     ]),
+    el("div", { class: "haven-window-body" }, [bodyNode]),
   ]);
+  maximizeBtn.addEventListener("click", () => {
+    windowEl.classList.toggle("is-maximized");
+    const isMax = windowEl.classList.contains("is-maximized");
+    maximizeBtn.textContent = isMax ? "🗗" : "⛶";
+    maximizeBtn.setAttribute("aria-label", isMax ? "Thu nhỏ" : "Phóng to");
+  });
+  return el("div", { class: "haven-window-backdrop" }, [windowEl]);
 }
 
 function havenLoadingBody() {
@@ -1106,10 +1141,14 @@ function havenLoadingBody() {
   ]);
 }
 
-async function beginCall() {
+function showConnecting() {
+  playHavenSound(HAVEN_SOUND_CONNECTING);
   const root = havenOverlayRoot();
   root.replaceChildren(havenWindowShell(havenLoadingBody()));
+}
 
+async function beginCall() {
+  showConnecting();
   havenPermissionDenied = false;
   try {
     havenStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
@@ -1120,11 +1159,8 @@ async function beginCall() {
   setTimeout(() => showCall(null), delay);
 }
 
-// "Make another call": short reconnect delay, reuses the already-granted camera stream.
 function reconnectCall(lastVideo) {
-  if (havenTimerHandle) { clearInterval(havenTimerHandle); havenTimerHandle = null; }
-  const root = havenOverlayRoot();
-  root.replaceChildren(havenWindowShell(havenLoadingBody()));
+  showConnecting();
   const delay = HAVEN_LOADING_MIN_MS + Math.random() * (HAVEN_LOADING_MAX_MS - HAVEN_LOADING_MIN_MS);
   setTimeout(() => showCall(lastVideo), delay);
 }
@@ -1152,8 +1188,8 @@ function showCall(lastVideo) {
 
   remoteEl.addEventListener("ended", () => showEnded(videoUrl));
 
-  const nextBtn = el("button", { type: "button", class: "haven-window-ctrl-btn", "aria-label": "Gọi khác", title: "Gọi khác" }, "⟳");
-  nextBtn.addEventListener("click", () => reconnectCall(videoUrl));
+  const hangUpBtn = el("button", { type: "button", class: "haven-window-ctrl-btn haven-hangup-btn", "aria-label": "Ngắt máy", title: "Ngắt máy" }, "☎");
+  hangUpBtn.addEventListener("click", havenHangUp);
 
   const body = el("div", { class: "haven-window-call-body" }, [
     timerEl,
@@ -1161,7 +1197,7 @@ function showCall(lastVideo) {
       el("div", { class: "haven-pane haven-pane-local" }, [localEl]),
       el("div", { class: "haven-pane haven-pane-remote" }, [remoteEl]),
     ]),
-    el("div", { class: "haven-window-controls" }, [nextBtn]),
+    el("div", { class: "haven-window-controls" }, [hangUpBtn]),
   ]);
 
   root.replaceChildren(havenWindowShell(body));
@@ -1169,10 +1205,12 @@ function showCall(lastVideo) {
 
 function showEnded(lastVideo) {
   if (havenTimerHandle) { clearInterval(havenTimerHandle); havenTimerHandle = null; }
+  playHavenSound(HAVEN_SOUND_CALL_END);
+
   const againBtn = el("button", { type: "button", class: "haven-end-btn haven-end-again" }, "Make another call");
   const exitBtn = el("button", { type: "button", class: "haven-end-btn haven-end-exit" }, "Exit");
   againBtn.addEventListener("click", () => reconnectCall(lastVideo));
-  exitBtn.addEventListener("click", () => { havenCleanup(); location.hash = "#/"; });
+  exitBtn.addEventListener("click", havenHangUp);
 
   const overlay = el("div", { class: "haven-ended-overlay" }, [
     el("div", { class: "haven-ended-box" }, [
