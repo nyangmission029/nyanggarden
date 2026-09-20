@@ -245,3 +245,6 @@ select:disabled { opacity: 0.5; }
 @media (max-width: 560px) {
   .cc-gallery-item { flex-wrap: wrap; }
 }
+#ccGallerySection[hidden] {
+  display: none !important;
+}
