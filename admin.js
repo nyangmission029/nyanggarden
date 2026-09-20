@@ -8,7 +8,7 @@
    (xem hướng dẫn lấy giá trị trong README-admin.md):
    ========================================================= */
 const CLOUD_NAME = "jz2djjuo";       // ví dụ: "dabc123xy"
-const UPLOAD_PRESET = "nyangmission029"; // FIXED — was accidentally "nyangmi" (same as EDIT_SECRET), which broke uploads (Cloudinary 400)
+const UPLOAD_PRESET = "nyangmission029";
 
 /* ========================================================= */
 
@@ -124,11 +124,6 @@ function markSuccess(item, url) {
   input.value = url;
 
   const copyBtn = document.createElement("button");
-const ccGallerySection = document.getElementById("ccGallerySection");
-const ccGalleryDropZone = document.getElementById("ccGalleryDropZone");
-const ccGalleryFileInput = document.getElementById("ccGalleryFileInput");
-const ccGalleryPickBtn = document.getElementById("ccGalleryPickBtn");
-const ccGalleryList = document.getElementById("ccGalleryList");
   copyBtn.className = "copy-btn";
   copyBtn.type = "button";
   copyBtn.textContent = "Copy";
@@ -161,7 +156,9 @@ function markError(item, message) {
    - 2-level, flat file: category has "file" directly, and that file is a plain array
    - 3-level, one shared file: category has "file" directly, but that file is
      { years: [{ id, name, cover, dates: [...] }] } — years live inside it
-   ---------- */
+   Plus a special "gallery" shape (isGallery: true, e.g. DM MEDIA): entries have
+   "images": [{url, note}] instead of a single "link" — filled via the multi-image
+   upload section below instead of the link field. ---------- */
 
 const ccCategory = document.getElementById("ccCategory");
 const ccYear = document.getElementById("ccYear");
@@ -179,13 +176,19 @@ const ccOutput = document.getElementById("ccOutput");
 const ccOutputHint = document.getElementById("ccOutputHint");
 const ccOutputJson = document.getElementById("ccOutputJson");
 const ccCopyBtn = document.getElementById("ccCopyBtn");
+const ccGallerySection = document.getElementById("ccGallerySection");
+const ccGalleryDropZone = document.getElementById("ccGalleryDropZone");
+const ccGalleryFileInput = document.getElementById("ccGalleryFileInput");
+const ccGalleryPickBtn = document.getElementById("ccGalleryPickBtn");
+const ccGalleryList = document.getElementById("ccGalleryList");
 
 let ccData = null;
 let ccCoverUrl = "";
 let ccUploading = false;
 let ccYearMode = ""; // "years-inline" | "flat-file" | "nested-file"
 let ccIsGallery = false;
-let ccGalleryImages = []; // [{ url, note, id }]
+let ccGalleryImages = []; // [{ url, note, id, pending, error }]
+
 fetch("data.json", { cache: "no-store" })
   .then((res) => res.json())
   .then((data) => {
@@ -203,12 +206,12 @@ fetch("data.json", { cache: "no-store" })
   });
 
 ccCategory.addEventListener("change", async () => {
-const cat = ccData && ccData.categories.find((c) => c.id === ccCategory.value);
-ccYearMode = "";
-ccIsGallery = !!(cat && cat.isGallery);
-ccGallerySection.hidden = !ccIsGallery;
-document.getElementById("ccLink").closest(".cc-field").hidden = ccIsGallery;
-if (ccIsGallery) { ccGalleryImages = []; ccGalleryList.replaceChildren(); }
+  const cat = ccData && ccData.categories.find((c) => c.id === ccCategory.value);
+  ccYearMode = "";
+  ccIsGallery = !!(cat && cat.isGallery);
+  ccGallerySection.hidden = !ccIsGallery;
+  ccLink.closest(".cc-field").hidden = ccIsGallery;
+  if (ccIsGallery) { ccGalleryImages = []; ccGalleryList.replaceChildren(); }
 
   if (!cat) {
     ccYear.innerHTML = '<option value="">— Chọn danh mục trước —</option>';
@@ -261,6 +264,8 @@ if (ccIsGallery) { ccGalleryImages = []; ccGalleryList.replaceChildren(); }
     }
   }
 });
+
+/* ---------- Cover image upload (single image, used by every category shape) ---------- */
 
 ccPickBtn.addEventListener("click", () => ccFileInput.click());
 
@@ -325,6 +330,9 @@ function ccHandleFile(file) {
       ccUploading = false;
     });
 }
+
+/* ---------- Gallery multi-image upload (DM MEDIA only, isGallery: true) ---------- */
+
 ccGalleryPickBtn.addEventListener("click", () => ccGalleryFileInput.click());
 
 ccGalleryFileInput.addEventListener("change", (e) => {
@@ -401,6 +409,9 @@ function ccUploadGalleryImage(file) {
       row.title = err.message;
     });
 }
+
+/* ---------- Generate the JSON snippet to paste into the right data file ---------- */
+
 function ccSlugify(text) {
   return text
     .toLowerCase()
@@ -471,12 +482,27 @@ ccGenerateBtn.addEventListener("click", () => {
     return;
   }
 
-  const entry = {
-    id: ccMakeId(name),
-    label: ccLabel.value.trim(),
-    cover: ccCoverUrl || "images/covers/REPLACE_ME.jpg",
-    link: ccLink.value.trim() || "https://mega.nz/folder/YOUR_LINK_HERE",
-  };
+  let entry;
+  if (ccIsGallery) {
+    const readyImages = ccGalleryImages.filter((i) => i.url && !i.error);
+    if (ccGalleryImages.some((i) => i.pending)) {
+      alert("Còn ảnh đang tải lên, đợi 1-2 giây rồi bấm lại nhé.");
+      return;
+    }
+    entry = {
+      id: ccMakeId(name),
+      label: ccLabel.value.trim(),
+      cover: ccCoverUrl || (readyImages[0] ? readyImages[0].url : "images/covers/REPLACE_ME.jpg"),
+      images: readyImages.map((i) => ({ url: i.url, note: i.note || "" })),
+    };
+  } else {
+    entry = {
+      id: ccMakeId(name),
+      label: ccLabel.value.trim(),
+      cover: ccCoverUrl || "images/covers/REPLACE_ME.jpg",
+      link: ccLink.value.trim() || "https://mega.nz/folder/YOUR_LINK_HERE",
+    };
+  }
 
   const ccFileName = yr.file || "(chưa có file cho mục này — tạo file mới trong thư mục data/)";
   const hintLocation = nestedYear
@@ -487,7 +513,7 @@ ccGenerateBtn.addEventListener("click", () => {
   ccOutput.hidden = false;
   ccOutput.scrollIntoView({ behavior: "smooth", block: "center" });
 
-  if (!ccCoverUrl) {
+  if (!ccIsGallery && !ccCoverUrl) {
     ccUploadStatus.classList.add("is-error");
     ccUploadStatus.textContent = "⚠️ Chưa có ảnh bìa — nhớ tự điền lại đường dẫn cover trong JSON.";
   }
