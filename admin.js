@@ -124,6 +124,11 @@ function markSuccess(item, url) {
   input.value = url;
 
   const copyBtn = document.createElement("button");
+const ccGallerySection = document.getElementById("ccGallerySection");
+const ccGalleryDropZone = document.getElementById("ccGalleryDropZone");
+const ccGalleryFileInput = document.getElementById("ccGalleryFileInput");
+const ccGalleryPickBtn = document.getElementById("ccGalleryPickBtn");
+const ccGalleryList = document.getElementById("ccGalleryList");
   copyBtn.className = "copy-btn";
   copyBtn.type = "button";
   copyBtn.textContent = "Copy";
@@ -179,7 +184,8 @@ let ccData = null;
 let ccCoverUrl = "";
 let ccUploading = false;
 let ccYearMode = ""; // "years-inline" | "flat-file" | "nested-file"
-
+let ccIsGallery = false;
+let ccGalleryImages = []; // [{ url, note, id }]
 fetch("data.json", { cache: "no-store" })
   .then((res) => res.json())
   .then((data) => {
@@ -197,8 +203,12 @@ fetch("data.json", { cache: "no-store" })
   });
 
 ccCategory.addEventListener("change", async () => {
-  const cat = ccData && ccData.categories.find((c) => c.id === ccCategory.value);
-  ccYearMode = "";
+const cat = ccData && ccData.categories.find((c) => c.id === ccCategory.value);
+ccYearMode = "";
+ccIsGallery = !!(cat && cat.isGallery);
+ccGallerySection.hidden = !ccIsGallery;
+document.getElementById("ccLink").closest(".cc-field").hidden = ccIsGallery;
+if (ccIsGallery) { ccGalleryImages = []; ccGalleryList.replaceChildren(); }
 
   if (!cat) {
     ccYear.innerHTML = '<option value="">— Chọn danh mục trước —</option>';
@@ -315,7 +325,82 @@ function ccHandleFile(file) {
       ccUploading = false;
     });
 }
+ccGalleryPickBtn.addEventListener("click", () => ccGalleryFileInput.click());
 
+ccGalleryFileInput.addEventListener("change", (e) => {
+  [...e.target.files].forEach((file) => ccUploadGalleryImage(file));
+  ccGalleryFileInput.value = "";
+});
+
+["dragenter", "dragover"].forEach((evt) =>
+  ccGalleryDropZone.addEventListener(evt, (e) => { e.preventDefault(); ccGalleryDropZone.classList.add("is-dragover"); })
+);
+["dragleave", "drop"].forEach((evt) =>
+  ccGalleryDropZone.addEventListener(evt, (e) => { e.preventDefault(); ccGalleryDropZone.classList.remove("is-dragover"); })
+);
+ccGalleryDropZone.addEventListener("drop", (e) => {
+  [...(e.dataTransfer.files || [])].forEach((file) => ccUploadGalleryImage(file));
+});
+
+function ccUploadGalleryImage(file) {
+  if (!file.type.startsWith("image/")) return;
+  if (CLOUD_NAME === "YOUR_CLOUD_NAME" || UPLOAD_PRESET === "YOUR_UPLOAD_PRESET") {
+    configWarning.hidden = false;
+    configWarning.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+
+  const item = { url: "", note: "", pending: true, id: `g${Date.now()}${Math.random().toString(36).slice(2, 6)}` };
+  ccGalleryImages.push(item);
+
+  const row = document.createElement("div");
+  row.className = "cc-gallery-item is-pending";
+  const thumb = document.createElement("img");
+  thumb.className = "cc-gallery-thumb";
+  thumb.src = URL.createObjectURL(file);
+  const noteInput = document.createElement("input");
+  noteInput.type = "text";
+  noteInput.className = "cc-gallery-note-input";
+  noteInput.placeholder = "Ghi chú cho ảnh này — không bắt buộc";
+  noteInput.addEventListener("input", () => { item.note = noteInput.value; });
+  const removeBtn = document.createElement("button");
+  removeBtn.type = "button";
+  removeBtn.className = "cc-gallery-remove-btn";
+  removeBtn.textContent = "✕";
+  removeBtn.addEventListener("click", () => {
+    ccGalleryImages = ccGalleryImages.filter((i) => i.id !== item.id);
+    row.remove();
+  });
+  row.appendChild(thumb);
+  row.appendChild(noteInput);
+  row.appendChild(removeBtn);
+  ccGalleryList.appendChild(row);
+
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", UPLOAD_PRESET);
+
+  fetch(UPLOAD_URL, { method: "POST", body: formData })
+    .then(async (res) => {
+      const data = await res.json().catch(() => null);
+      if (!res.ok) {
+        const msg = (data && data.error && data.error.message) || `mã lỗi ${res.status}`;
+        throw new Error(msg);
+      }
+      return data;
+    })
+    .then((data) => {
+      item.url = data.secure_url;
+      item.pending = false;
+      row.classList.remove("is-pending");
+    })
+    .catch((err) => {
+      item.error = true;
+      row.classList.remove("is-pending");
+      row.classList.add("is-error");
+      row.title = err.message;
+    });
+}
 function ccSlugify(text) {
   return text
     .toLowerCase()
