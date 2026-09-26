@@ -248,3 +248,10 @@ select:disabled { opacity: 0.5; }
 #ccGallerySection[hidden] {
   display: none !important;
 }
+.result-thumb-audio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  background: var(--bg);
+}
