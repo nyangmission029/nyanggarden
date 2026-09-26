@@ -13,7 +13,10 @@ const UPLOAD_PRESET = "nyangmission029";
 /* ========================================================= */
 
 const UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`;
-
+function cloudinaryUploadUrl(file) {
+  const isMedia = file.type.startsWith("video/") || file.type.startsWith("audio/");
+  return `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/${isMedia ? "video" : "image"}/upload`;
+}
 const fileInput = document.getElementById("fileInput");
 const pickBtn = document.getElementById("pickBtn");
 const dropZone = document.getElementById("dropZone");
@@ -57,7 +60,8 @@ function handleFiles(fileList) {
     return;
   }
   [...fileList].forEach((file) => {
-    if (!file.type.startsWith("image/")) return;
+    const isSupported = file.type.startsWith("image/") || file.type.startsWith("video/") || file.type.startsWith("audio/");
+    if (!isSupported) return;
     uploadFile(file);
   });
 }
@@ -68,7 +72,7 @@ function uploadFile(file) {
   formData.append("file", file);
   formData.append("upload_preset", UPLOAD_PRESET);
 
-  fetch(UPLOAD_URL, { method: "POST", body: formData })
+  fetch(cloudinaryUploadUrl(file), { method: "POST", body: formData })
     .then(async (res) => {
       const data = await res.json().catch(() => null);
       if (!res.ok) {
@@ -85,10 +89,22 @@ function createResultItem(file) {
   const wrap = document.createElement("div");
   wrap.className = "result-item is-pending";
 
-  const thumb = document.createElement("img");
-  thumb.className = "result-thumb";
-  thumb.src = URL.createObjectURL(file);
-  thumb.alt = file.name;
+  let thumb;
+  if (file.type.startsWith("video/")) {
+    thumb = document.createElement("video");
+    thumb.className = "result-thumb";
+    thumb.src = URL.createObjectURL(file);
+    thumb.muted = true;
+  } else if (file.type.startsWith("audio/")) {
+    thumb = document.createElement("div");
+    thumb.className = "result-thumb result-thumb-audio";
+    thumb.textContent = "🎵";
+  } else {
+    thumb = document.createElement("img");
+    thumb.className = "result-thumb";
+    thumb.src = URL.createObjectURL(file);
+    thumb.alt = file.name;
+  }
 
   const body = document.createElement("div");
   body.className = "result-body";
@@ -351,7 +367,8 @@ ccGalleryDropZone.addEventListener("drop", (e) => {
 });
 
 function ccUploadGalleryImage(file) {
-  if (!file.type.startsWith("image/")) return;
+  const isVideo = file.type.startsWith("video/");
+  if (!file.type.startsWith("image/") && !isVideo) return;
   if (CLOUD_NAME === "YOUR_CLOUD_NAME" || UPLOAD_PRESET === "YOUR_UPLOAD_PRESET") {
     configWarning.hidden = false;
     configWarning.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -361,11 +378,15 @@ function ccUploadGalleryImage(file) {
   const item = { url: "", note: "", pending: true, id: `g${Date.now()}${Math.random().toString(36).slice(2, 6)}` };
   ccGalleryImages.push(item);
 
+  const item = { url: "", note: "", pending: true, isVideo, id: `g${Date.now()}${Math.random().toString(36).slice(2, 6)}` };
+  ccGalleryImages.push(item);
+
   const row = document.createElement("div");
   row.className = "cc-gallery-item is-pending";
-  const thumb = document.createElement("img");
+  const thumb = document.createElement(isVideo ? "video" : "img");
   thumb.className = "cc-gallery-thumb";
   thumb.src = URL.createObjectURL(file);
+  if (isVideo) thumb.muted = true;
   const noteInput = document.createElement("input");
   noteInput.type = "text";
   noteInput.className = "cc-gallery-note-input";
@@ -388,7 +409,7 @@ function ccUploadGalleryImage(file) {
   formData.append("file", file);
   formData.append("upload_preset", UPLOAD_PRESET);
 
-  fetch(UPLOAD_URL, { method: "POST", body: formData })
+  fetch(cloudinaryUploadUrl(file), { method: "POST", body: formData })
     .then(async (res) => {
       const data = await res.json().catch(() => null);
       if (!res.ok) {
