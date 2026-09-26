@@ -375,9 +375,6 @@ function ccUploadGalleryImage(file) {
     return;
   }
 
-  const item = { url: "", note: "", pending: true, id: `g${Date.now()}${Math.random().toString(36).slice(2, 6)}` };
-  ccGalleryImages.push(item);
-
   const item = { url: "", note: "", pending: true, isVideo, id: `g${Date.now()}${Math.random().toString(36).slice(2, 6)}` };
   ccGalleryImages.push(item);
 
