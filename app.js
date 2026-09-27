@@ -1014,8 +1014,8 @@ function renderNotFound() {
    thúc (kể cả khi tự bấm ngắt máy). ---------- */
 
 const HAVEN_VIDEOS = [
-  "https://res.cloudinary.com/YOUR_CLOUD_NAME/video/upload/YOUR_HAVEN_VIDEO_1.mp4",
-  "https://res.cloudinary.com/YOUR_CLOUD_NAME/video/upload/YOUR_HAVEN_VIDEO_2.mp4",
+  "https://res.cloudinary.com/jz2djjuo/video/upload/v1789711503/iyxtkmqfaery78ozpowg.mp4",
+  "https://res.cloudinary.com/jz2djjuo/video/upload/v1789711470/xjbqaijomp0szdywasdc.mp4",
 ];
 const HAVEN_TAGLINE = "A quiet place to call in.";
 const HAVEN_CALLER_NAME = "Jungwon";
